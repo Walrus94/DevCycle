@@ -14,6 +14,7 @@ from .message import (
     MessageStatus,
     MessageType,
     create_command,
+    create_error_event,
     create_event,
 )
 
@@ -27,4 +28,5 @@ __all__ = [
     "MessageStatus",
     "create_command",
     "create_event",
+    "create_error_event",
 ]

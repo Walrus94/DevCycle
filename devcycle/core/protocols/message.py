@@ -8,7 +8,7 @@ the system and agents, starting with the business analyst agent.
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from uuid import uuid4
 
 
@@ -39,13 +39,16 @@ class AgentEvent(Enum):
 
 
 class MessageStatus(Enum):
-    """Status values for messages and operations."""
+    """Enhanced status values for messages and operations with error handling."""
 
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     FAILED = "failed"
     STOPPED = "stopped"
+    RETRYING = "retrying"  # Currently retrying
+    TIMEOUT = "timeout"  # Operation timed out
+    CANCELLED = "cancelled"  # Operation cancelled
 
 
 @dataclass
@@ -129,4 +132,46 @@ def create_event(
     """Create an event message from agent to system."""
     header = MessageHeader(message_type=MessageType.EVENT)
     body = MessageBody(action=action, data=data, status=status)
+    return Message(header=header, body=body)
+
+
+def create_error_event(
+    original_message_id: str,
+    error_type: str,
+    error_code: str,
+    error_message: str,
+    error_context: Optional[Dict[str, Any]] = None,
+    retry_strategy: Optional[str] = None,
+) -> Message:
+    """Create an error event message."""
+    from devcycle.core.errors import ErrorType, RetryStrategy, create_error_response
+
+    # Convert string to enum if needed
+    error_type_enum = (
+        error_type if isinstance(error_type, ErrorType) else ErrorType(error_type)
+    )
+    retry_strategy_enum = None
+    if retry_strategy:
+        retry_strategy_enum = (
+            retry_strategy
+            if isinstance(retry_strategy, RetryStrategy)
+            else RetryStrategy(retry_strategy)
+        )
+
+    error_data = create_error_response(
+        error_type=error_type_enum,
+        error_code=error_code,
+        error_message=error_message,
+        error_context=error_context,
+        retry_strategy=retry_strategy_enum,
+        source="agent_protocol",
+    )
+
+    # Add protocol-specific fields
+    error_data["original_message_id"] = original_message_id
+
+    header = MessageHeader(message_type=MessageType.EVENT)
+    body = MessageBody(
+        action="error_occurred", data=error_data, status=MessageStatus.FAILED
+    )
     return Message(header=header, body=body)
