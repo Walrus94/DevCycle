@@ -10,6 +10,11 @@ import os
 import sys
 from pathlib import Path
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+
+load_dotenv()
+
 try:
     from devcycle.huggingface import (
         HuggingFaceClient,
@@ -46,7 +51,7 @@ def main() -> None:
         return
 
     # Organization configuration
-    org_name = "devcycle"  # Change this to your desired organization name
+    org_name = os.getenv("HF_ORG_NAME", "arsnazarov")  # Get from env or use default
     description = "AI-Powered Application Development Lifecycle Automation System"
 
     print(f"Setting up workspace for organization: {org_name}")
