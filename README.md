@@ -46,3 +46,19 @@ DevCycle is a Proof of Concept (POC) that leverages multiple specialized AI agen
    ```bash
    python -c "import devcycle; print('DevCycle installed successfully!')"
    ```
+
+## Kafka Setup
+
+DevCycle uses Apache Kafka for scalable agent communication. See [Kafka Setup Guide](docs/kafka-setup.md) for detailed instructions.
+
+**Quick Kafka commands:**
+```bash
+# Start Kafka (KRaft mode - no Zookeeper needed)
+docker-compose up -d
+
+# View Kafka UI (optional)
+docker-compose --profile dev up -d
+
+# Stop services
+docker-compose down
+```
