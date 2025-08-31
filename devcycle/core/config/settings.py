@@ -89,49 +89,6 @@ class RedisConfig(BaseSettings):
     model_config = {"env_prefix": "REDIS_"}
 
 
-class AuthConfig(BaseSettings):
-    """Configuration for authentication system."""
-
-    # Session settings
-    session_secret_key: str = Field(
-        default="dev-secret-key-change-in-production",
-        description="Secret key for session encryption",
-    )
-    session_cookie_name: str = Field(
-        default="devcycle_session", description="Session cookie name"
-    )
-    session_max_age: int = Field(default=3600, description="Session max age in seconds")
-    session_secure: bool = Field(
-        default=True, description="Secure cookies (HTTPS only)"
-    )
-    session_httponly: bool = Field(default=True, description="HTTP-only cookies")
-    session_samesite: str = Field(
-        default="strict", description="SameSite cookie policy"
-    )
-
-    # Rate limiting (consolidated from API config)
-    rate_limit_enabled: bool = Field(default=True, description="Enable rate limiting")
-    rate_limit_requests: int = Field(
-        default=100, description="Requests per minute per session/IP"
-    )
-    rate_limit_window: int = Field(
-        default=60, description="Rate limit window in seconds"
-    )
-
-    # Security
-    bcrypt_rounds: int = Field(default=12, description="BCrypt hashing rounds")
-    max_login_attempts: int = Field(default=5, description="Maximum login attempts")
-    lockout_duration: int = Field(
-        default=300, description="Account lockout duration in seconds"
-    )
-
-    # API Keys
-    api_key_length: int = Field(default=32, description="API key length")
-    api_key_prefix: str = Field(default="dev_", description="API key prefix")
-
-    model_config = {"env_prefix": "AUTH_"}
-
-
 class AgentConfig(BaseSettings):
     """Configuration for AI agents."""
 
@@ -171,7 +128,6 @@ class DevCycleConfig(BaseSettings):
     huggingface: HuggingFaceConfig = Field(default_factory=HuggingFaceConfig)
     api: APIConfig = Field(default_factory=APIConfig)
     redis: RedisConfig = Field(default_factory=RedisConfig)
-    auth: AuthConfig = Field(default_factory=AuthConfig)
     agent: AgentConfig = Field(default_factory=AgentConfig)
 
     model_config = {
