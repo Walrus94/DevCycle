@@ -246,3 +246,8 @@ tmp/
 temp/
 *.tmp
 *.temp
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
