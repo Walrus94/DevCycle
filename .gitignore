@@ -240,6 +240,7 @@ logs/
 .env.staging
 config/local.py
 config/production.py
+config.env
 
 # Temporary files
 tmp/
