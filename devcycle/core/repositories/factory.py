@@ -9,6 +9,7 @@ from typing import Any, Type, TypeVar
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from .agent_repository import AgentRepository, AgentTaskRepository
 from .base import BaseRepository
 from .user_repository import UserRepository
 
@@ -42,6 +43,24 @@ class RepositoryFactory:
         """
         return UserRepository(self.session)
 
+    def get_agent_repository(self) -> AgentRepository:
+        """
+        Get agent repository instance.
+
+        Returns:
+            AgentRepository instance
+        """
+        return AgentRepository(self.session)
+
+    def get_agent_task_repository(self) -> AgentTaskRepository:
+        """
+        Get agent task repository instance.
+
+        Returns:
+            AgentTaskRepository instance
+        """
+        return AgentTaskRepository(self.session)
+
     def get_repository(self, repository_class: Type[R]) -> R:
         """
         Get repository instance by class.
@@ -57,6 +76,10 @@ class RepositoryFactory:
         """
         if repository_class == UserRepository:
             return UserRepository(self.session)  # type: ignore[return-value]
+        elif repository_class == AgentRepository:
+            return self.get_agent_repository()  # type: ignore[return-value]
+        elif repository_class == AgentTaskRepository:
+            return self.get_agent_task_repository()  # type: ignore[return-value]
 
         raise ValueError(f"Unsupported repository class: {repository_class}")
 

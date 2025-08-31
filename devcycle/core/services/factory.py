@@ -8,6 +8,7 @@ with proper dependency injection and configuration.
 from typing import Any, Dict, Optional, Type, TypeVar
 
 from ..repositories.factory import RepositoryFactory
+from .agent_service import AgentService
 from .user_service import UserService
 
 T = TypeVar("T")
@@ -44,6 +45,22 @@ class ServiceFactory:
 
         return self._services[UserService]  # type: ignore[no-any-return]
 
+    def get_agent_service(self) -> AgentService:
+        """
+        Get agent service instance.
+
+        Returns:
+            AgentService instance
+        """
+        if AgentService not in self._services:
+            agent_repository = self.repository_factory.get_agent_repository()
+            task_repository = self.repository_factory.get_agent_task_repository()
+            self._services[AgentService] = AgentService(
+                agent_repository, task_repository
+            )
+
+        return self._services[AgentService]  # type: ignore[no-any-return]
+
     def get_service(self, service_class: Type[T], *args: Any, **kwargs: Any) -> T:
         """
         Get service instance by class.
@@ -59,6 +76,8 @@ class ServiceFactory:
         """
         if service_class == UserService:
             return self.get_user_service()  # type: ignore[return-value]
+        elif service_class == AgentService:
+            return self.get_agent_service()  # type: ignore[return-value]
 
         raise ValueError(f"Unsupported service class: {service_class}")
 
@@ -76,7 +95,15 @@ class ServiceFactory:
         """
         if service_class == UserService:
             user_repository = self.repository_factory.get_user_repository()
-            return UserService(user_repository, *args, **kwargs)  # type: ignore[return-value]
+            return UserService(
+                user_repository, *args, **kwargs
+            )  # type: ignore[return-value]
+        elif service_class == AgentService:
+            agent_repository = self.repository_factory.get_agent_repository()
+            task_repository = self.repository_factory.get_agent_task_repository()
+            return AgentService(
+                agent_repository, task_repository, *args, **kwargs
+            )  # type: ignore[return-value]
 
         raise ValueError(f"Unsupported service class: {service_class}")
 

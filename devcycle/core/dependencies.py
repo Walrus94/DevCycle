@@ -14,8 +14,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .auth.fastapi_users import current_active_user
 from .auth.models import User
 from .database.connection import get_async_session
+from .repositories.agent_repository import AgentRepository, AgentTaskRepository
 from .repositories.factory import get_repository_factory
 from .repositories.user_repository import UserRepository
+from .services.agent_service import AgentService
 from .services.factory import get_service_factory
 from .services.user_service import UserService
 
@@ -51,6 +53,55 @@ async def get_user_service(
     repository_factory = get_repository_factory(session)
     service_factory = get_service_factory(repository_factory)
     return service_factory.get_user_service()
+
+
+async def get_agent_repository(
+    session: AsyncSession = Depends(get_async_session),
+) -> AgentRepository:
+    """
+    Get agent repository dependency.
+
+    Args:
+        session: Database session
+
+    Returns:
+        AgentRepository instance
+    """
+    repository_factory = get_repository_factory(session)
+    return repository_factory.get_agent_repository()
+
+
+async def get_agent_task_repository(
+    session: AsyncSession = Depends(get_async_session),
+) -> AgentTaskRepository:
+    """
+    Get agent task repository dependency.
+
+    Args:
+        session: Database session
+
+    Returns:
+        AgentTaskRepository instance
+    """
+    repository_factory = get_repository_factory(session)
+    return repository_factory.get_agent_task_repository()
+
+
+async def get_agent_service(
+    session: AsyncSession = Depends(get_async_session),
+) -> AgentService:
+    """
+    Get agent service dependency.
+
+    Args:
+        session: Database session
+
+    Returns:
+        AgentService instance
+    """
+    repository_factory = get_repository_factory(session)
+    service_factory = get_service_factory(repository_factory)
+    return service_factory.get_agent_service()
 
 
 async def get_current_user_id(user: User = Depends(current_active_user)) -> UUID:
