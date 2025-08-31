@@ -52,6 +52,9 @@ python-dotenv = "^1.0.0"
 asyncio = "^3.4.3"
 aiohttp = "^3.9.0"
 
+# Redis for session storage
+redis = {extras = ["hiredis"], version = "^5.0.0"}
+
 # Message queuing
 confluent-kafka = "^2.3.0"
 
@@ -151,6 +154,7 @@ module = [
     "pydantic.*",
     "loguru.*",
     "structlog.*",
+    "redis.*",
 ]
 ignore_missing_imports = true
 

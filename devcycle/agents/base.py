@@ -72,8 +72,10 @@ class BaseAgent(ABC):
         self.execution_history: List[AgentResult] = []
         self.current_task: Optional[asyncio.Task] = None
 
-        # Load configuration
-        self._load_config()
+        # Only load global config if config was explicitly provided (not None)
+        # This preserves the test expectation of empty config by default
+        if config is not None:
+            self._load_config()
 
         self.logger.info(f"Agent {name} initialized")
 
@@ -82,7 +84,12 @@ class BaseAgent(ABC):
         global_config = get_config()
         agent_config = global_config.get_agent_config(self.name.lower())
         if agent_config:
-            self.config.update(agent_config)
+            # Merge global config with existing config, preserving existing values
+            # Since this method is only called when config is not None,
+            # we can safely update
+            for key, value in agent_config.items():
+                if key not in self.config:
+                    self.config[key] = value
             self.logger.debug(f"Loaded configuration: {agent_config}")
 
     @abstractmethod

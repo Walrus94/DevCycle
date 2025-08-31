@@ -12,7 +12,7 @@ from devcycle.huggingface.workspace import HuggingFaceWorkspace, WorkspaceConfig
 class TestHuggingFaceClient:
     """Test Hugging Face API client."""
 
-    def test_client_initialization_with_token(self):
+    def test_client_initialization_with_token(self) -> None:
         """Test client initialization with explicit token."""
         with patch.dict("os.environ", {}, clear=True):
             with patch("devcycle.core.config.get_config") as mock_get_config:
@@ -23,7 +23,7 @@ class TestHuggingFaceClient:
                 client = HuggingFaceClient(token="test-token")
                 assert client.token == "test-token"
 
-    def test_client_initialization_without_token(self):
+    def test_client_initialization_without_token(self) -> None:
         """Test client initialization without token raises error."""
         with patch.dict("os.environ", {}, clear=True):
             with patch("devcycle.core.config.get_config") as mock_get_config:
@@ -37,7 +37,7 @@ class TestHuggingFaceClient:
                     HuggingFaceClient()
 
     @patch("devcycle.huggingface.client.HfApi")
-    def test_test_connection_success(self, mock_hf_api):
+    def test_test_connection_success(self, mock_hf_api: Mock) -> None:
         """Test successful connection test."""
         mock_api = Mock()
         mock_api.whoami.return_value = {"name": "test-user"}
@@ -48,7 +48,7 @@ class TestHuggingFaceClient:
             assert client.test_connection() is True
 
     @patch("devcycle.huggingface.client.HfApi")
-    def test_test_connection_failure(self, mock_hf_api):
+    def test_test_connection_failure(self, mock_hf_api: Mock) -> None:
         """Test failed connection test."""
         mock_api = Mock()
         mock_api.whoami.side_effect = Exception("Connection failed")
@@ -59,7 +59,7 @@ class TestHuggingFaceClient:
             assert client.test_connection() is False
 
     @patch("devcycle.huggingface.client.HfApi")
-    def test_get_organizations_success(self, mock_hf_api):
+    def test_get_organizations_success(self, mock_hf_api: Mock) -> None:
         """Test successful organizations retrieval."""
         mock_api = Mock()
         mock_api.list_organizations.return_value = [{"name": "test-org"}]
@@ -72,7 +72,7 @@ class TestHuggingFaceClient:
             assert orgs[0]["name"] == "test-org"
 
     @patch("devcycle.huggingface.client.HfApi")
-    def test_get_organizations_failure(self, mock_hf_api):
+    def test_get_organizations_failure(self, mock_hf_api: Mock) -> None:
         """Test failed organizations retrieval."""
         mock_api = Mock()
         mock_api.list_organizations.side_effect = Exception("API Error")
@@ -84,7 +84,7 @@ class TestHuggingFaceClient:
             assert orgs == []
 
     @patch("devcycle.huggingface.client.HfApi")
-    def test_create_organization(self, mock_hf_api):
+    def test_create_organization(self, mock_hf_api: Mock) -> None:
         """Test organization creation."""
         mock_api = Mock()
         mock_hf_api.return_value = mock_api
@@ -95,7 +95,7 @@ class TestHuggingFaceClient:
             assert result is None  # Currently returns None as per implementation
 
     @patch("devcycle.huggingface.client.HfApi")
-    def test_get_spaces_success(self, mock_hf_api):
+    def test_get_spaces_success(self, mock_hf_api: Mock) -> None:
         """Test successful spaces retrieval."""
         mock_api = Mock()
         mock_api.list_spaces.return_value = [{"id": "test-org/test-space"}]
@@ -108,7 +108,7 @@ class TestHuggingFaceClient:
             assert spaces[0]["id"] == "test-org/test-space"
 
     @patch("devcycle.huggingface.client.HfApi")
-    def test_get_spaces_failure(self, mock_hf_api):
+    def test_get_spaces_failure(self, mock_hf_api: Mock) -> None:
         """Test failed spaces retrieval."""
         mock_api = Mock()
         mock_api.list_spaces.side_effect = Exception("API Error")
@@ -120,7 +120,7 @@ class TestHuggingFaceClient:
             assert spaces == []
 
     @patch("devcycle.huggingface.client.HfApi")
-    def test_create_space_success(self, mock_hf_api):
+    def test_create_space_success(self, mock_hf_api: Mock) -> None:
         """Test successful space creation."""
         mock_api = Mock()
         mock_api.create_repo.return_value = {"id": "test-org/test-space"}
@@ -132,7 +132,7 @@ class TestHuggingFaceClient:
             assert result == {"id": "test-org/test-space"}
 
     @patch("devcycle.huggingface.client.HfApi")
-    def test_create_space_failure(self, mock_hf_api):
+    def test_create_space_failure(self, mock_hf_api: Mock) -> None:
         """Test failed space creation."""
         mock_api = Mock()
         mock_api.create_repo.side_effect = Exception("API Error")
@@ -144,7 +144,7 @@ class TestHuggingFaceClient:
             assert result is None
 
     @patch("devcycle.huggingface.client.HfApi")
-    def test_update_space_config_success(self, mock_hf_api):
+    def test_update_space_config_success(self, mock_hf_api: Mock) -> None:
         """Test successful space config update."""
         mock_api = Mock()
         mock_api.upload_file.return_value = True
@@ -156,7 +156,7 @@ class TestHuggingFaceClient:
             assert result is True
 
     @patch("devcycle.huggingface.client.HfApi")
-    def test_update_space_config_failure(self, mock_hf_api):
+    def test_update_space_config_failure(self, mock_hf_api: Mock) -> None:
         """Test failed space config update."""
         mock_api = Mock()
         mock_api.upload_file.side_effect = Exception("API Error")
@@ -168,7 +168,7 @@ class TestHuggingFaceClient:
             assert result is False
 
     @patch("devcycle.huggingface.client.HfApi")
-    def test_get_space_runtime_success(self, mock_hf_api):
+    def test_get_space_runtime_success(self, mock_hf_api: Mock) -> None:
         """Test successful runtime retrieval."""
         mock_api = Mock()
         mock_runtime = Mock()
@@ -181,7 +181,7 @@ class TestHuggingFaceClient:
             assert result == mock_runtime
 
     @patch("devcycle.huggingface.client.HfApi")
-    def test_get_space_runtime_failure(self, mock_hf_api):
+    def test_get_space_runtime_failure(self, mock_hf_api: Mock) -> None:
         """Test failed runtime retrieval."""
         mock_api = Mock()
         mock_api.get_space_runtime.side_effect = Exception("API Error")
@@ -196,7 +196,7 @@ class TestHuggingFaceClient:
 class TestWorkspaceConfig:
     """Test workspace configuration."""
 
-    def test_workspace_config_defaults(self):
+    def test_workspace_config_defaults(self) -> None:
         """Test workspace config with default values."""
         config = WorkspaceConfig(name="test-org", description="Test organization")
 
@@ -207,7 +207,7 @@ class TestWorkspaceConfig:
         assert config.logo_url is None
         assert config.website_url is None
 
-    def test_workspace_config_custom_values(self):
+    def test_workspace_config_custom_values(self) -> None:
         """Test workspace config with custom values."""
         config = WorkspaceConfig(
             name="test-org",
@@ -227,7 +227,7 @@ class TestWorkspaceConfig:
 class TestHuggingFaceWorkspace:
     """Test Hugging Face workspace management."""
 
-    def test_workspace_initialization(self):
+    def test_workspace_initialization(self) -> None:
         """Test workspace manager initialization."""
         mock_client = Mock()
         workspace = HuggingFaceWorkspace(mock_client)
@@ -238,7 +238,7 @@ class TestHuggingFaceWorkspace:
         "devcycle.huggingface.workspace.HuggingFaceWorkspace"
         "._configure_existing_workspace"
     )
-    def test_setup_devcycle_workspace_existing_org(self, mock_configure):
+    def test_setup_devcycle_workspace_existing_org(self, mock_configure: Mock) -> None:
         """Test workspace setup with existing organization."""
         mock_client = Mock()
         mock_client.test_connection.return_value = True
@@ -253,7 +253,7 @@ class TestHuggingFaceWorkspace:
         mock_configure.assert_called_once_with(config)
 
     @patch("devcycle.huggingface.workspace.HuggingFaceWorkspace._create_new_workspace")
-    def test_setup_devcycle_workspace_new_org(self, mock_create):
+    def test_setup_devcycle_workspace_new_org(self, mock_create: Mock) -> None:
         """Test workspace setup with new organization."""
         mock_client = Mock()
         mock_client.test_connection.return_value = True
@@ -267,7 +267,7 @@ class TestHuggingFaceWorkspace:
         assert result is True
         mock_create.assert_called_once_with(config)
 
-    def test_setup_devcycle_workspace_connection_failure(self):
+    def test_setup_devcycle_workspace_connection_failure(self) -> None:
         """Test workspace setup with connection failure."""
         mock_client = Mock()
         mock_client.test_connection.return_value = False
@@ -278,7 +278,7 @@ class TestHuggingFaceWorkspace:
         result = workspace.setup_devcycle_workspace(config)
         assert result is False
 
-    def test_create_new_workspace(self):
+    def test_create_new_workspace(self) -> None:
         """Test new workspace creation."""
         mock_client = Mock()
         mock_client.get_spaces.return_value = []
@@ -292,7 +292,9 @@ class TestHuggingFaceWorkspace:
         assert result is True
 
     @patch("devcycle.huggingface.workspace.HuggingFaceWorkspace._create_devcycle_space")
-    def test_configure_existing_workspace_new_space(self, mock_create_space):
+    def test_configure_existing_workspace_new_space(
+        self, mock_create_space: Mock
+    ) -> None:
         """Test configuring existing workspace with new space."""
         mock_client = Mock()
         mock_client.get_spaces.return_value = [{"id": "test-org/other-space"}]
@@ -306,7 +308,9 @@ class TestHuggingFaceWorkspace:
         mock_create_space.assert_called_once()
 
     @patch("devcycle.huggingface.workspace.HuggingFaceWorkspace._update_space_config")
-    def test_configure_existing_workspace_existing_space(self, mock_update_config):
+    def test_configure_existing_workspace_existing_space(
+        self, mock_update_config: Mock
+    ) -> None:
         """Test configuring existing workspace with existing space."""
         mock_client = Mock()
         mock_client.get_spaces.return_value = [{"id": "test-org/devcycle-ai-agents"}]
@@ -320,7 +324,7 @@ class TestHuggingFaceWorkspace:
         mock_update_config.assert_called_once()
 
     @patch("devcycle.huggingface.workspace.HuggingFaceWorkspace._update_space_config")
-    def test_create_devcycle_space_success(self, mock_update_config):
+    def test_create_devcycle_space_success(self, mock_update_config: Mock) -> None:
         """Test successful DevCycle space creation."""
         mock_client = Mock()
         mock_client.create_space.return_value = {"id": "test-org/devcycle-ai-agents"}
@@ -334,7 +338,7 @@ class TestHuggingFaceWorkspace:
         mock_update_config.assert_called_once()
 
     @patch("devcycle.huggingface.workspace.HuggingFaceWorkspace._update_space_config")
-    def test_create_devcycle_space_failure(self, mock_update_config):
+    def test_create_devcycle_space_failure(self, mock_update_config: Mock) -> None:
         """Test failed DevCycle space creation."""
         mock_client = Mock()
         mock_client.create_space.return_value = None
@@ -347,7 +351,7 @@ class TestHuggingFaceWorkspace:
         mock_update_config.assert_not_called()
 
     @patch("devcycle.huggingface.workspace.HuggingFaceWorkspace._update_space_config")
-    def test_update_space_config_success(self, mock_update_config):
+    def test_update_space_config_success(self, mock_update_config: Mock) -> None:
         """Test successful space config update."""
         mock_client = Mock()
         mock_update_config.return_value = True
@@ -360,7 +364,7 @@ class TestHuggingFaceWorkspace:
         mock_update_config.assert_called_once()
 
     @patch("devcycle.huggingface.workspace.HuggingFaceWorkspace._update_space_config")
-    def test_update_space_config_failure(self, mock_update_config):
+    def test_update_space_config_failure(self, mock_update_config: Mock) -> None:
         """Test failed space config update."""
         mock_client = Mock()
         mock_update_config.return_value = False
@@ -371,7 +375,7 @@ class TestHuggingFaceWorkspace:
         result = workspace._update_space_config("test-org/devcycle-ai-agents", config)
         assert result is False
 
-    def test_get_workspace_status_not_found(self):
+    def test_get_workspace_status_not_found(self) -> None:
         """Test workspace status when organization not found."""
         mock_client = Mock()
         mock_client.get_organizations.return_value = [{"name": "other-org"}]
@@ -382,7 +386,7 @@ class TestHuggingFaceWorkspace:
         assert result["exists"] is False
         assert result["status"] == "not_found"
 
-    def test_get_workspace_status_found_no_devcycle_space(self):
+    def test_get_workspace_status_found_no_devcycle_space(self) -> None:
         """Test workspace status when org exists but no DevCycle space."""
         mock_client = Mock()
         mock_client.get_organizations.return_value = [{"name": "test-org"}]
@@ -395,7 +399,7 @@ class TestHuggingFaceWorkspace:
         assert result["status"] == "incomplete"
         assert result["spaces_count"] == 1
 
-    def test_get_workspace_status_found_with_devcycle_space(self):
+    def test_get_workspace_status_found_with_devcycle_space(self) -> None:
         """Test workspace status when org exists with DevCycle space."""
         mock_client = Mock()
         mock_client.get_organizations.return_value = [{"name": "test-org"}]
@@ -413,7 +417,7 @@ class TestHuggingFaceWorkspace:
 class TestSpaceConfig:
     """Test space configuration."""
 
-    def test_space_config_defaults(self):
+    def test_space_config_defaults(self) -> None:
         """Test space config with default values."""
         config = SpaceConfig(name="test-space", description="Test space")
 
@@ -426,7 +430,7 @@ class TestSpaceConfig:
         assert config.python_version == "3.9"
         assert config.sdk_version is None
 
-    def test_space_config_custom_values(self):
+    def test_space_config_custom_values(self) -> None:
         """Test space config with custom values."""
         config = SpaceConfig(
             name="test-space",
@@ -448,7 +452,7 @@ class TestSpaceConfig:
 class TestHuggingFaceSpace:
     """Test Hugging Face space management."""
 
-    def test_space_initialization(self):
+    def test_space_initialization(self) -> None:
         """Test space manager initialization."""
         mock_client = Mock()
         space = HuggingFaceSpace(mock_client, "test-org/test-space")
@@ -457,7 +461,7 @@ class TestHuggingFaceSpace:
         assert space.repo_id == "test-org/test-space"
 
     @patch("devcycle.huggingface.space.HuggingFaceSpace._setup_space_files")
-    def test_create_space_success(self, mock_setup_files):
+    def test_create_space_success(self, mock_setup_files: Mock) -> None:
         """Test successful space creation."""
         mock_client = Mock()
         mock_client.create_space.return_value = {"id": "test-org/test-space"}
@@ -470,7 +474,7 @@ class TestHuggingFaceSpace:
         assert result is True
         mock_setup_files.assert_called_once_with(config)
 
-    def test_create_space_failure(self):
+    def test_create_space_failure(self) -> None:
         """Test failed space creation."""
         mock_client = Mock()
         mock_client.create_space.return_value = None
@@ -482,7 +486,7 @@ class TestHuggingFaceSpace:
         assert result is False
 
     @patch("devcycle.huggingface.space.HuggingFaceSpace._upload_file")
-    def test_setup_space_files_success(self, mock_upload):
+    def test_setup_space_files_success(self, mock_upload: Mock) -> None:
         """Test successful space file setup."""
         mock_client = Mock()
         mock_upload.return_value = True
@@ -497,7 +501,7 @@ class TestHuggingFaceSpace:
         )  # requirements.txt, README.md, app.py, .gitattributes
 
     @patch("devcycle.huggingface.space.HuggingFaceSpace._upload_file")
-    def test_setup_space_files_failure(self, mock_upload):
+    def test_setup_space_files_failure(self, mock_upload: Mock) -> None:
         """Test failed space file setup."""
         mock_client = Mock()
         mock_upload.return_value = False  # First upload fails
@@ -508,7 +512,7 @@ class TestHuggingFaceSpace:
         result = space._setup_space_files(config)
         assert result is False
 
-    def test_generate_requirements_txt_gradio(self):
+    def test_generate_requirements_txt_gradio(self) -> None:
         """Test requirements.txt generation for Gradio."""
         mock_client = Mock()
         space = HuggingFaceSpace(mock_client, "test-org/test-space")
@@ -518,7 +522,7 @@ class TestHuggingFaceSpace:
         assert "gradio>=" in requirements
         assert "gradio-client>=" in requirements
 
-    def test_generate_requirements_txt_streamlit(self):
+    def test_generate_requirements_txt_streamlit(self) -> None:
         """Test requirements.txt generation for Streamlit."""
         mock_client = Mock()
         space = HuggingFaceSpace(mock_client, "test-org/test-space")
@@ -528,7 +532,7 @@ class TestHuggingFaceSpace:
         assert "streamlit>=" in requirements
         assert "gradio>=" not in requirements
 
-    def test_generate_readme_md(self):
+    def test_generate_readme_md(self) -> None:
         """Test README.md generation."""
         mock_client = Mock()
         space = HuggingFaceSpace(mock_client, "test-org/test-space")
@@ -539,7 +543,7 @@ class TestHuggingFaceSpace:
         assert "Test space" in readme
         assert "Gradio" in readme
 
-    def test_generate_app_py_gradio(self):
+    def test_generate_app_py_gradio(self) -> None:
         """Test app.py generation for Gradio."""
         mock_client = Mock()
         space = HuggingFaceSpace(mock_client, "test-org/test-space")
@@ -549,7 +553,7 @@ class TestHuggingFaceSpace:
         assert "import gradio as gr" in app_content
         assert "gr.Blocks" in app_content
 
-    def test_generate_app_py_streamlit(self):
+    def test_generate_app_py_streamlit(self) -> None:
         """Test app.py generation for Streamlit."""
         mock_client = Mock()
         space = HuggingFaceSpace(mock_client, "test-org/test-space")
@@ -559,7 +563,7 @@ class TestHuggingFaceSpace:
         assert "import streamlit as st" in app_content
         assert "st.title" in app_content
 
-    def test_generate_app_py_docker(self):
+    def test_generate_app_py_docker(self) -> None:
         """Test app.py generation for Docker."""
         mock_client = Mock()
         space = HuggingFaceSpace(mock_client, "test-org/test-space")
@@ -569,7 +573,7 @@ class TestHuggingFaceSpace:
         assert "FROM python:3.9-slim" in app_content
         assert "WORKDIR /app" in app_content
 
-    def test_generate_gitattributes(self):
+    def test_generate_gitattributes(self) -> None:
         """Test .gitattributes generation."""
         mock_client = Mock()
         space = HuggingFaceSpace(mock_client, "test-org/test-space")
@@ -579,7 +583,7 @@ class TestHuggingFaceSpace:
         assert "gradio = true" in gitattributes
         assert "private = true" in gitattributes
 
-    def test_upload_file_success(self):
+    def test_upload_file_success(self) -> None:
         """Test successful file upload."""
         mock_client = Mock()
         mock_client.api.upload_file.return_value = True
@@ -590,7 +594,7 @@ class TestHuggingFaceSpace:
         assert result is True
         mock_client.api.upload_file.assert_called_once()
 
-    def test_upload_file_failure(self):
+    def test_upload_file_failure(self) -> None:
         """Test failed file upload."""
         mock_client = Mock()
         mock_client.api.upload_file.return_value = False
@@ -600,7 +604,7 @@ class TestHuggingFaceSpace:
 
         assert result is False
 
-    def test_get_space_status_active(self):
+    def test_get_space_status_active(self) -> None:
         """Test space status when space is active."""
         mock_client = Mock()
         mock_runtime = Mock()
@@ -613,7 +617,7 @@ class TestHuggingFaceSpace:
         assert result["status"] == "active"
         assert result["runtime"] == mock_runtime
 
-    def test_get_space_status_inactive(self):
+    def test_get_space_status_inactive(self) -> None:
         """Test space status when space is inactive."""
         mock_client = Mock()
         mock_client.get_space_runtime.return_value = None
@@ -625,7 +629,7 @@ class TestHuggingFaceSpace:
         assert result["status"] == "inactive"
         assert result["runtime"] is None
 
-    def test_get_space_status_error(self):
+    def test_get_space_status_error(self) -> None:
         """Test space status when error occurs."""
         mock_client = Mock()
         mock_client.get_space_runtime.side_effect = Exception("API Error")
@@ -643,7 +647,9 @@ class TestHuggingFaceCLI:
 
     @patch("devcycle.huggingface.cli.HuggingFaceClient")
     @patch("devcycle.huggingface.cli.setup_workspace")
-    def test_setup_workspace_function_success(self, mock_setup, mock_client_class):
+    def test_setup_workspace_function_success(
+        self, mock_setup: Mock, mock_client_class: Mock
+    ) -> None:
         """Test successful workspace setup function."""
         mock_setup.return_value = True
 
@@ -655,8 +661,8 @@ class TestHuggingFaceCLI:
     @patch("devcycle.huggingface.cli.HuggingFaceClient")
     @patch("devcycle.huggingface.cli.check_workspace_status")
     def test_check_workspace_status_function_success(
-        self, mock_check, mock_client_class
-    ):
+        self, mock_check: Mock, mock_client_class: Mock
+    ) -> None:
         """Test successful workspace status check function."""
         mock_check.return_value = True
 
@@ -665,7 +671,7 @@ class TestHuggingFaceCLI:
         result = check_workspace_status("test-org", "test-token")
         assert result is True
 
-    def test_setup_workspace_function_failure(self):
+    def test_setup_workspace_function_failure(self) -> None:
         """Test failed workspace setup function."""
         from devcycle.huggingface.cli import setup_workspace
 
@@ -675,7 +681,7 @@ class TestHuggingFaceCLI:
         )
         assert result is False
 
-    def test_check_workspace_status_function_failure(self):
+    def test_check_workspace_status_function_failure(self) -> None:
         """Test failed workspace status check function."""
         from devcycle.huggingface.cli import check_workspace_status
 
