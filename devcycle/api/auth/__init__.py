@@ -1,14 +1,11 @@
 """
-Authentication package for the DevCycle API.
+Authentication module for DevCycle API.
 
-This package provides session-based authentication using Redis for storage,
-with features like session management, rate limiting, and security.
+This module provides session management and authentication endpoints
+for the DevCycle API system.
 """
 
-from .sessions import SessionData, SessionManager, get_session_manager
+from .endpoints import router as auth_router
+from .sessions import SessionManager, get_session_manager
 
-__all__ = [
-    "SessionManager",
-    "SessionData",
-    "get_session_manager",
-]
+__all__ = ["SessionManager", "get_session_manager", "auth_router"]

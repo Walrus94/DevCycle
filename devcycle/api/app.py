@@ -138,12 +138,14 @@ def _setup_exception_handlers(app: FastAPI) -> None:
 
 def _setup_routes(app: FastAPI) -> None:
     """Setup application routes."""
+    from .auth import auth_router
     from .routes import agents, health, messages
 
     # Include routers
     app.include_router(health.router, prefix="/api/v1", tags=["health"])
     app.include_router(agents.router, prefix="/api/v1", tags=["agents"])
     app.include_router(messages.router, prefix="/api/v1", tags=["messages"])
+    app.include_router(auth_router, prefix="/api/v1")
 
 
 # Create the main application instance
