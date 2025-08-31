@@ -63,6 +63,23 @@ class LoggingConfig(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="LOG_")
 
 
+class APIConfig(BaseSettings):
+    """Configuration for the API server."""
+
+    host: str = Field(default="127.0.0.1", description="API server host")
+    port: int = Field(default=8000, description="API server port")
+    workers: int = Field(default=1, description="Number of API workers")
+    reload: bool = Field(default=True, description="Enable auto-reload in development")
+    cors_origins: List[str] = Field(default=["*"], description="Allowed CORS origins")
+    cors_credentials: bool = Field(default=True, description="Allow CORS credentials")
+    cors_methods: List[str] = Field(default=["*"], description="Allowed CORS methods")
+    cors_headers: List[str] = Field(default=["*"], description="Allowed CORS headers")
+    rate_limit: int = Field(default=100, description="Rate limit per minute per IP")
+    timeout: int = Field(default=30, description="Request timeout in seconds")
+
+    model_config = SettingsConfigDict(env_prefix="API_")
+
+
 class DatabaseConfig(BaseSettings):
     """Configuration for database connections."""
 
@@ -100,11 +117,7 @@ class DevCycleConfig(BaseSettings):
     agent: AgentConfig = Field(default_factory=AgentConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
-
-    # API configuration
-    api_host: str = Field(default="127.0.0.1", description="API host")
-    api_port: int = Field(default=8000, description="API port")
-    api_workers: int = Field(default=1, description="Number of API workers")
+    api: APIConfig = Field(default_factory=APIConfig)
 
     # Security
     secret_key: str = Field(
