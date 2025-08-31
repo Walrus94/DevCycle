@@ -119,7 +119,7 @@ class DevCycleConfig(BaseSettings):
         env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
     )
 
-    @field_validator("environment")  # type: ignore[misc]
+    @field_validator("environment")
     @classmethod
     def validate_environment(cls, v: str) -> str:
         """Validate environment value."""
@@ -128,9 +128,7 @@ class DevCycleConfig(BaseSettings):
             raise ValueError(f"Environment must be one of: {allowed}")
         return v
 
-    @field_validator(
-        "base_dir", "data_dir", "logs_dir", "temp_dir"
-    )  # type: ignore[misc]
+    @field_validator("base_dir", "data_dir", "logs_dir", "temp_dir")
     @classmethod
     def ensure_directories_exist(cls, v: Path) -> Path:
         """Ensure directories exist."""

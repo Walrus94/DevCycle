@@ -132,11 +132,15 @@ class BaseAgent(ABC):
             if not self.validate_input(input_data):
                 error_msg = f"Invalid input data for agent {self.name}"
                 self.logger.error(error_msg)
-                return AgentResult(
+                self.status = AgentStatus.FAILED
+                result = AgentResult(
                     success=False,
                     error=error_msg,
                     execution_time=time.time() - start_time,
                 )
+                # Store in history
+                self.execution_history.append(result)
+                return result
 
             # Update status
             self.status = AgentStatus.RUNNING
@@ -197,7 +201,7 @@ class BaseAgent(ABC):
 
             return result
 
-    async def execute_async(self, input_data: Any, **kwargs: Any) -> asyncio.Task:
+    def execute_async(self, input_data: Any, **kwargs: Any) -> asyncio.Task:
         """
         Execute the agent asynchronously.
 
