@@ -22,6 +22,7 @@ from devcycle.core.messaging.implementations.kafka.queue import KafkaMessageQueu
 from devcycle.core.protocols.message import AgentAction, create_command
 
 
+@pytest.mark.integration
 class TestKafkaTopicManagement:
     """Test Kafka topic management functionality."""
 
@@ -102,6 +103,7 @@ class TestKafkaTopicManagement:
                 await kafka_queue.ensure_topics()
 
 
+@pytest.mark.integration
 class TestKafkaConsumerGroups:
     """Test Kafka consumer group functionality."""
 
@@ -162,6 +164,7 @@ class TestKafkaConsumerGroups:
             assert "consumer-test.messages" in subscribed_topics
 
 
+@pytest.mark.integration
 class TestKafkaMessageRouting:
     """Test Kafka message routing functionality."""
 
@@ -315,6 +318,7 @@ class TestKafkaMessageRouting:
             assert call_args["metadata"]["retry_config"] == "custom"
 
 
+@pytest.mark.integration
 class TestKafkaMessageConsumption:
     """Test Kafka message consumption functionality."""
 
@@ -430,6 +434,7 @@ class TestKafkaMessageConsumption:
         assert result is None  # Should return None for timeout
 
 
+@pytest.mark.integration
 class TestKafkaRoutingIntegration:
     """Integration tests for Kafka routing."""
 

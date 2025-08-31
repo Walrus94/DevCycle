@@ -4,6 +4,8 @@ Tests for the error handling and retry mechanisms.
 
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from devcycle.core import (
     ErrorDetails,
     ErrorType,
@@ -16,6 +18,7 @@ from devcycle.core import (
 from devcycle.core.protocols import MessageStatus, create_error_event
 
 
+@pytest.mark.unit
 class TestErrorHandling:
     """Test the error handling implementation."""
 

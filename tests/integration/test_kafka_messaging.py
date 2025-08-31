@@ -23,6 +23,7 @@ from devcycle.core.messaging.interfaces.queue import QueueMessage
 from devcycle.core.protocols.message import Message, MessageStatus, create_event
 
 
+@pytest.mark.integration
 class TestKafkaConfig:
     """Test Kafka configuration."""
 
@@ -76,6 +77,7 @@ class TestKafkaConfig:
         assert config.heartbeat_interval_ms == 5000
 
 
+@pytest.mark.integration
 class TestMessagingConfig:
     """Test messaging configuration."""
 
@@ -127,6 +129,7 @@ class TestMessagingConfig:
         assert isinstance(kafka_config, KafkaConfig)
 
 
+@pytest.mark.integration
 class TestMessageQueueFactory:
     """Test message queue factory."""
 
@@ -156,6 +159,7 @@ class TestMessageQueueFactory:
             MessageQueueFactory.create_queue(config)
 
 
+@pytest.mark.integration
 class TestKafkaMessageQueue:
     """Test Kafka message queue implementation."""
 
@@ -364,6 +368,7 @@ class TestKafkaMessageQueue:
         assert not kafka_queue.running
 
 
+@pytest.mark.integration
 class TestKafkaMessageRouting:
     """Test Kafka message routing functionality."""
 
@@ -496,6 +501,7 @@ class TestKafkaMessageRouting:
             assert call_args["metadata"]["retry_config"] == "custom"
 
 
+@pytest.mark.integration
 class TestKafkaErrorHandling:
     """Test Kafka error handling."""
 

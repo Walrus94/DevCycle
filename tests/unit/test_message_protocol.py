@@ -2,6 +2,8 @@
 Tests for the message protocol implementation.
 """
 
+import pytest
+
 from devcycle.core.protocols import (
     AgentAction,
     AgentEvent,
@@ -13,6 +15,7 @@ from devcycle.core.protocols import (
 )
 
 
+@pytest.mark.unit
 class TestMessageProtocol:
     """Test the message protocol implementation."""
 

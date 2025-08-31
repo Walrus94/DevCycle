@@ -4,9 +4,12 @@ import json
 import logging
 from typing import Any
 
+import pytest
+
 from devcycle.core.logging import get_logger, log_agent_activity, log_workflow_step
 
 
+@pytest.mark.unit
 class TestLogging:
     """Test logging functionality."""
 

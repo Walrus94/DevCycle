@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Example script for setting up DevCycle Hugging Face workspace.
+Example script for setting up Hugging Face workspace for DevCycle.
 
 This script demonstrates how to use the Hugging Face integration
-to set up a workspace and create spaces for AI agents.
+to create and configure workspaces for AI agent development.
 """
 
 import os
@@ -11,9 +11,13 @@ import sys
 from pathlib import Path
 
 # Load environment variables from .env file
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv  # type: ignore[import-not-found]
 
-load_dotenv()
+    load_dotenv()
+except ImportError:
+    # dotenv is optional, just continue without it
+    pass
 
 try:
     from devcycle.huggingface import (

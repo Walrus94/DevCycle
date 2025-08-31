@@ -45,7 +45,7 @@ def setup_logging(
     ]
 
     # Add JSON renderer for production/Kibana compatibility
-    if json_output or config.is_production():
+    if json_output or config.environment == "production":
         processors.append(structlog.processors.JSONRenderer())
     else:
         # Human-readable format for development

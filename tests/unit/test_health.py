@@ -14,6 +14,7 @@ def client() -> TestClient:
     return TestClient(app)
 
 
+@pytest.mark.api
 class TestHealthEndpoints:
     """Test health check endpoints."""
 

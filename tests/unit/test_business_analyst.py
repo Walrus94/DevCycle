@@ -11,6 +11,7 @@ import pytest
 from devcycle.agents.business_analyst import BusinessAnalystAgent, Requirement
 
 
+@pytest.mark.unit
 class TestBusinessAnalystAgent:
     """Test BusinessAnalystAgent functionality."""
 
@@ -109,6 +110,7 @@ class TestBusinessAnalystAgent:
         assert len(summary["recent_requirements"]) == 3
 
 
+@pytest.mark.unit
 class TestRequirement:
     """Test Requirement dataclass."""
 

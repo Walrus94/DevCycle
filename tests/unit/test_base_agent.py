@@ -77,9 +77,11 @@ def validation_error_agent():
     return TestAgentWithValidationError("validation_error_agent")
 
 
+@pytest.mark.unit
 class TestAgentStatus:
     """Test AgentStatus enum."""
 
+    @pytest.mark.unit
     def test_agent_status_values(self):
         """Test that all expected status values exist."""
         assert AgentStatus.IDLE.value == "idle"
@@ -89,6 +91,7 @@ class TestAgentStatus:
         assert AgentStatus.CANCELLED.value == "cancelled"
 
 
+@pytest.mark.unit
 class TestAgentResult:
     """Test AgentResult dataclass."""
 
@@ -118,6 +121,7 @@ class TestAgentResult:
         assert "timestamp" in result_dict
 
 
+@pytest.mark.unit
 class TestBaseAgent:
     """Test BaseAgent abstract class implementation."""
 
@@ -170,6 +174,7 @@ class TestBaseAgent:
         assert "idle" in repr_repr
 
 
+@pytest.mark.unit
 class TestAgentExecution:
     """Test agent execution functionality."""
 
@@ -229,6 +234,7 @@ class TestAgentExecution:
         )  # Allow small overhead
 
 
+@pytest.mark.unit
 class TestAgentAsyncExecution:
     """Test asynchronous execution functionality."""
 
@@ -280,6 +286,7 @@ class TestAgentAsyncExecution:
         assert cancelled is False
 
 
+@pytest.mark.unit
 class TestAgentStateManagement:
     """Test agent state management functionality."""
 
@@ -331,6 +338,7 @@ class TestAgentStateManagement:
         assert test_agent.current_task is None
 
 
+@pytest.mark.unit
 class TestAgentFactory:
     """Test AgentFactory functionality."""
 
@@ -383,6 +391,7 @@ class TestAgentFactory:
         assert len(agents) == 2
 
 
+@pytest.mark.integration
 class TestAgentIntegration:
     """Integration tests for agent functionality."""
 
