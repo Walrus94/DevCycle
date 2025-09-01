@@ -14,9 +14,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .auth.fastapi_users import current_active_user
 from .auth.models import User
 from .database.connection import get_async_session
+from .messaging.middleware import MessageValidator
+from .messaging.validation import MessageValidationConfig
 from .repositories.agent_repository import AgentRepository, AgentTaskRepository
 from .repositories.factory import get_repository_factory
 from .repositories.user_repository import UserRepository
+from .services.agent_availability_service import AgentAvailabilityService
 from .services.agent_service import AgentService
 from .services.factory import get_service_factory
 from .services.user_service import UserService
@@ -169,3 +172,24 @@ async def get_authenticated_user_service(
         UserService instance
     """
     return user_service
+
+
+async def get_message_validator() -> MessageValidator:
+    """
+    Get message validator dependency.
+
+    Returns:
+        MessageValidator instance
+    """
+    config = MessageValidationConfig()
+    return MessageValidator(config)
+
+
+async def get_agent_availability_service() -> AgentAvailabilityService:
+    """
+    Get agent availability service dependency.
+
+    Returns:
+        AgentAvailabilityService instance
+    """
+    return AgentAvailabilityService()
