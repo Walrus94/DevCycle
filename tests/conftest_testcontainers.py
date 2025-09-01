@@ -27,7 +27,7 @@ def test_app():
     global app
     from devcycle.api.app import create_app
 
-    app = create_app(environment="test")
+    app = create_app(environment="testing")
     return app
 
 
@@ -95,6 +95,7 @@ async def run_database_migrations(engine):
                 is_verified BOOLEAN NOT NULL DEFAULT false,
                 first_name VARCHAR(100),
                 last_name VARCHAR(100),
+                role VARCHAR(50) NOT NULL DEFAULT 'user',
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )
@@ -223,6 +224,53 @@ def async_client(test_db_session, test_app) -> AsyncClient:
 @pytest.fixture
 def client(async_client) -> AsyncClient:
     """Create a sync test client (alias for async_client for compatibility)."""
+    return async_client
+
+
+@pytest.fixture
+async def authenticated_client(async_client, test_db_session) -> AsyncClient:
+    """Create an authenticated test client with a test user."""
+    from passlib.context import CryptContext
+    from sqlalchemy import text
+
+    # Create password context for hashing
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+    # Create a test user directly in the database
+    hashed_password = pwd_context.hash("TestPass123!")
+
+    # Insert user directly into database
+    await test_db_session.execute(
+        text(
+            """
+            INSERT INTO "user" (email, hashed_password, is_active, is_superuser,
+                               is_verified, role)
+            VALUES (:email, :hashed_password, :is_active, :is_superuser,
+                   :is_verified, :role)
+        """
+        ),
+        {
+            "email": "testuser@example.com",
+            "hashed_password": hashed_password,
+            "is_active": True,
+            "is_superuser": False,
+            "is_verified": True,
+            "role": "user",
+        },
+    )
+    await test_db_session.commit()
+
+    # Login to get token
+    login_response = await async_client.post(
+        "/api/v1/auth/jwt/login",
+        data={"username": "testuser@example.com", "password": "TestPass123!"},
+    )
+
+    token = login_response.json()["access_token"]
+
+    # Set the authorization header for all requests
+    async_client.headers.update({"Authorization": f"Bearer {token}"})
+
     return async_client
 
 

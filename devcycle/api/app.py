@@ -21,6 +21,7 @@ from starlette.types import ASGIApp
 
 from ..core.config import get_config
 from ..core.logging import get_logger
+from .versioning import get_version_info
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -128,16 +129,56 @@ def create_app(environment: Optional[str] = None) -> FastAPI:
 
     # Override environment if specified
     if environment:
-        config.environment = environment
+        from ..core.config import Environment
+
+        config.environment = Environment(environment)
 
     app = FastAPI(
         title="DevCycle API",
-        description="RESTful API for DevCycle AI agent system",
+        description="""
+        ## DevCycle AI Agent System API
+
+        A comprehensive RESTful API for managing AI agents, handling inter-agent
+        communication, and monitoring system health in the DevCycle platform.
+
+        ### Features
+        - **Agent Management**: Register, monitor, and manage AI agents
+        - **Message Routing**: Send messages between agents with intelligent routing
+        - **Health Monitoring**: Comprehensive health checks and system monitoring
+        - **Authentication**: Secure JWT-based authentication
+        - **Versioning**: API versioning with backward compatibility
+
+        ### Authentication
+        Most endpoints require authentication. Use the `/auth/jwt/login` endpoint to
+        obtain a JWT token, then include it in the `Authorization` header as
+        `Bearer <token>`.
+
+        ### Rate Limiting
+        Authentication endpoints are rate-limited to 10 requests per minute per IP
+        address.
+
+        ### Support
+        For more information, see the [API Documentation](../docs/api-documentation.md).
+        """,
         version="0.1.0",
         docs_url="/docs" if config.environment != "production" else None,
         redoc_url="/redoc" if config.environment != "production" else None,
         lifespan=lifespan,
+        contact={
+            "name": "DevCycle Support",
+            "email": "support@devcycle.ai",
+        },
+        license_info={
+            "name": "MIT License",
+            "url": "https://opensource.org/licenses/MIT",
+        },
     )
+
+    # Add version information endpoint
+    @app.get("/api/version", tags=["version"])
+    async def get_api_version_info() -> Dict[str, Any]:
+        """Get API version information."""
+        return get_version_info()
 
     # Add middleware
     _setup_middleware(app, config)
@@ -251,6 +292,11 @@ def _setup_routes(app: FastAPI) -> None:
     from .auth import auth_router
     from .routes import agents, health, messages
 
+    # Create versioned routers (for future use)
+    # health_router = create_versioned_router(APIVersion.V1, tags=["health"])
+    # agents_router = create_versioned_router(APIVersion.V1, tags=["agents"])
+    # messages_router = create_versioned_router(APIVersion.V1, tags=["messages"])
+    # auth_router_v1 = create_versioned_router(APIVersion.V1, tags=["auth"])
     # Include routers
     app.include_router(health.router, prefix="/api/v1", tags=["health"])
     app.include_router(agents.router, prefix="/api/v1", tags=["agents"])

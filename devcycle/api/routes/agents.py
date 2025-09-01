@@ -19,16 +19,25 @@ from ...core.agents.models import (
     AgentType,
     AgentUpdate,
 )
+from ...core.auth.fastapi_users import current_active_user
+from ...core.auth.models import User
 from ...core.dependencies import get_agent_service
 from ...core.services.agent_service import AgentService
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
 
+# Authentication dependency for protected endpoints
+def require_auth() -> Any:
+    """Require authentication for protected endpoints."""
+    return Depends(current_active_user)
+
+
 @router.post("/", response_model=AgentResponse, status_code=status.HTTP_201_CREATED)
 async def register_agent(
     registration: AgentRegistration,
     agent_service: AgentService = Depends(get_agent_service),
+    user: User = Depends(current_active_user),
 ) -> AgentResponse:
     """
     Register a new agent.
@@ -62,6 +71,7 @@ async def list_agents(
     ),
     offset: Optional[int] = Query(0, ge=0, description="Number of agents to skip"),
     agent_service: AgentService = Depends(get_agent_service),
+    user: User = Depends(current_active_user),
 ) -> List[AgentResponse]:
     """
     List all agents with optional filtering.
