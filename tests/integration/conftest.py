@@ -12,8 +12,7 @@ import pytest
 from devcycle.core.config import DevCycleConfig
 
 # Import testcontainers fixtures for integration tests
-# Note: These fixtures are available through conftest_testcontainers.py
-# and will be automatically loaded by pytest
+from ..conftest_testcontainers import *  # noqa: F401, F403
 
 
 @pytest.fixture(scope="session")

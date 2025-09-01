@@ -26,10 +26,9 @@ from ..agents.models import (
     AgentUpdate,
 )
 from ..repositories.agent_repository import AgentRepository, AgentTaskRepository
-from .base import BaseService
 
 
-class AgentService(BaseService[Agent]):
+class AgentService:
     """Service for agent management operations."""
 
     def __init__(
@@ -39,7 +38,6 @@ class AgentService(BaseService[Agent]):
         lifecycle_service: Optional[AgentLifecycleService] = None,
     ):
         """Initialize agent service."""
-        super().__init__(agent_repository)
         self.agent_repository = agent_repository
         self.task_repository = task_repository
         self.lifecycle_service = lifecycle_service or AgentLifecycleService()
@@ -132,7 +130,7 @@ class AgentService(BaseService[Agent]):
         }
 
         # Create agent through repository
-        agent = await self.repository.create(**agent_data)
+        agent = await self.agent_repository.create(**agent_data)
 
         # Register with lifecycle service
         await self.lifecycle_service.register_agent(agent.id)
@@ -149,7 +147,7 @@ class AgentService(BaseService[Agent]):
     ) -> Optional[AgentResponse]:
         """Update agent with business logic validation."""
         # Get existing agent
-        agent = await self.get_by_id(agent_id)
+        agent = await self.agent_repository.get_by_id(agent_id)
         if not agent:
             return None
 
@@ -179,7 +177,7 @@ class AgentService(BaseService[Agent]):
             update_dict["metadata_json"] = json.dumps(update_data.metadata)
 
         # Update agent
-        updated_agent = await self.repository.update(agent_id, **update_dict)
+        updated_agent = await self.agent_repository.update(agent_id, **update_dict)
         if updated_agent:
             return await self._to_agent_response(updated_agent)
         return None
@@ -231,12 +229,30 @@ class AgentService(BaseService[Agent]):
         )
         return [await self._to_agent_response(agent) for agent in agents]
 
+    async def get_by_id(self, agent_id: UUID) -> Optional[AgentResponse]:
+        """Get agent by ID and convert to response model."""
+        agent = await self.agent_repository.get_by_id(agent_id)
+        if not agent:
+            return None
+        return await self._to_agent_response(agent)
+
+    async def get_all(
+        self, limit: Optional[int] = None, offset: Optional[int] = None
+    ) -> List[AgentResponse]:
+        """Get all agents and convert to response models."""
+        agents = await self.agent_repository.get_all(limit=limit, offset=offset)
+        return [await self._to_agent_response(agent) for agent in agents]
+
+    async def delete(self, agent_id: UUID) -> bool:
+        """Delete an agent."""
+        return await self.agent_repository.delete(agent_id)
+
     async def process_heartbeat(
         self, heartbeat: AgentHeartbeat
     ) -> Optional[AgentResponse]:
         """Process agent heartbeat and update health status."""
         # Get agent
-        agent = await self.get_by_id(heartbeat.agent_id)
+        agent = await self.agent_repository.get_by_id(heartbeat.agent_id)
         if not agent:
             return None
 
@@ -308,7 +324,7 @@ class AgentService(BaseService[Agent]):
     ) -> Optional[AgentTask]:
         """Assign a task to an agent."""
         # Check if agent is available
-        agent = await self.get_by_id(agent_id)
+        agent = await self.agent_repository.get_by_id(agent_id)
         if not agent or not agent.is_active:
             raise ValueError("Agent is not available for task assignment")
 
@@ -372,20 +388,6 @@ class AgentService(BaseService[Agent]):
             agent_id, limit, offset
         )
         return [await self._to_agent_task_response(task) for task in tasks]
-
-    async def get_by_id(self, agent_id: UUID) -> Optional[AgentResponse]:
-        """Get agent by ID and convert to response model."""
-        agent = await self.repository.get_by_id(agent_id)
-        if not agent:
-            return None
-        return await self._to_agent_response(agent)
-
-    async def get_all(
-        self, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[AgentResponse]:
-        """Get all agents and convert to response models."""
-        agents = await self.repository.get_all(limit=limit, offset=offset)
-        return [await self._to_agent_response(agent) for agent in agents]
 
     async def validate_business_rules(self, entity: Agent, **kwargs: Any) -> bool:
         """Validate business rules for agent operations."""
@@ -519,7 +521,7 @@ class AgentService(BaseService[Agent]):
     async def start_agent(self, agent_id: UUID) -> Optional[AgentResponse]:
         """Start an agent with lifecycle management."""
         # Check if agent exists
-        agent = await self.repository.get_by_id(agent_id)
+        agent = await self.agent_repository.get_by_id(agent_id)
         if not agent:
             return None
 
@@ -543,7 +545,7 @@ class AgentService(BaseService[Agent]):
         # Update database status
         await self.agent_repository.update_agent_status(agent_id, AgentStatus.OFFLINE)
 
-        agent = await self.repository.get_by_id(agent_id)
+        agent = await self.agent_repository.get_by_id(agent_id)
         return await self._to_agent_response(agent) if agent else None
 
     async def deploy_agent(self, agent_id: UUID) -> Optional[AgentResponse]:
@@ -556,7 +558,7 @@ class AgentService(BaseService[Agent]):
         # Update database status
         await self.agent_repository.update_agent_status(agent_id, AgentStatus.DEPLOYED)
 
-        agent = await self.repository.get_by_id(agent_id)
+        agent = await self.agent_repository.get_by_id(agent_id)
         return await self._to_agent_response(agent) if agent else None
 
     async def put_agent_in_maintenance(
@@ -573,7 +575,7 @@ class AgentService(BaseService[Agent]):
             agent_id, AgentStatus.MAINTENANCE
         )
 
-        agent = await self.repository.get_by_id(agent_id)
+        agent = await self.agent_repository.get_by_id(agent_id)
         return await self._to_agent_response(agent) if agent else None
 
     async def resume_agent_from_maintenance(
@@ -588,7 +590,7 @@ class AgentService(BaseService[Agent]):
         # Update database status
         await self.agent_repository.update_agent_status(agent_id, AgentStatus.ONLINE)
 
-        agent = await self.repository.get_by_id(agent_id)
+        agent = await self.agent_repository.get_by_id(agent_id)
         return await self._to_agent_response(agent) if agent else None
 
     def get_agent_lifecycle_status(self, agent_id: UUID) -> Optional[Dict[str, Any]]:

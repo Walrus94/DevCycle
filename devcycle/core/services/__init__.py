@@ -7,12 +7,11 @@ complex operations and coordinate between repositories and external services.
 
 from .agent_availability_service import AgentAvailabilityService
 from .agent_service import AgentService
-from .base import BaseService
 
 # UserService removed - using FastAPI Users directly
+# BaseService removed - was unnecessary abstraction
 
 __all__ = [
-    "BaseService",
     "AgentService",
     "AgentAvailabilityService",
 ]
