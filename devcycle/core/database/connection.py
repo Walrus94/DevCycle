@@ -30,9 +30,15 @@ def get_database_url() -> str:
     config = get_config().database
 
     if config.password:
-        return f"postgresql://{config.username}:{config.password}@{config.host}:{config.port}/{config.database}"
+        return (
+            f"postgresql://{config.username}:{config.password}"
+            f"@{config.host}:{config.port}/{config.database}"
+        )
     else:
-        return f"postgresql://{config.username}@{config.host}:{config.port}/{config.database}"
+        return (
+            f"postgresql://{config.username}"
+            f"@{config.host}:{config.port}/{config.database}"
+        )
 
 
 def get_engine() -> Engine:
@@ -167,9 +173,15 @@ def get_async_database_url() -> str:
     config = get_config().database
 
     if config.password:
-        return f"postgresql+asyncpg://{config.username}:{config.password}@{config.host}:{config.port}/{config.database}"
+        return (
+            f"postgresql+asyncpg://{config.username}:{config.password}"
+            f"@{config.host}:{config.port}/{config.database}"
+        )
     else:
-        return f"postgresql+asyncpg://{config.username}@{config.host}:{config.port}/{config.database}"
+        return (
+            f"postgresql+asyncpg://{config.username}"
+            f"@{config.host}:{config.port}/{config.database}"
+        )
 
 
 def get_async_engine() -> Any:

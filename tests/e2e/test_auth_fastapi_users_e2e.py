@@ -10,21 +10,22 @@ This module tests the complete authentication flow including:
 """
 
 import pytest
-from fastapi.testclient import TestClient
+from httpx import AsyncClient
 
-from devcycle.core.auth.models import User
+from devcycle.api.app import app
 
 
 @pytest.mark.e2e
 @pytest.mark.auth
 @pytest.mark.slow
+@pytest.mark.asyncio
 class TestFastAPIUsersAuthenticationE2E:
     """Test FastAPI Users authentication flow end-to-end."""
 
-    def test_debug_routes(self, client: TestClient):
+    @pytest.mark.asyncio
+    async def test_debug_routes(self, async_client: AsyncClient):
         """Debug test to check available routes."""
-        # Get the app's routes
-        app = client.app
+        # Get the app's routes directly from the imported app
         routes = []
         for route in app.routes:
             if hasattr(route, "path"):
@@ -42,12 +43,15 @@ class TestFastAPIUsersAuthenticationE2E:
 
         assert len(auth_routes) > 0, "No auth routes found"
 
-    def test_user_registration_and_login_flow(self, client: TestClient):
+    @pytest.mark.asyncio
+    async def test_user_registration_and_login_flow(self, async_client: AsyncClient):
         """Test complete user registration and JWT login flow."""
         # 1. Register a new user with basic fields only
         user_data = {"email": "newuser@example.com", "password": "SecurePass123!"}
 
-        register_response = client.post("/api/v1/auth/users/register", json=user_data)
+        register_response = await async_client.post(
+            "/api/v1/auth/users/register", json=user_data
+        )
         assert register_response.status_code == 201
 
         user_info = register_response.json()
@@ -62,7 +66,9 @@ class TestFastAPIUsersAuthenticationE2E:
             "password": "SecurePass123!",
         }
 
-        login_response = client.post("/api/v1/auth/jwt/login", data=login_data)
+        login_response = await async_client.post(
+            "/api/v1/auth/jwt/login", data=login_data
+        )
         assert login_response.status_code == 200
 
         login_info = login_response.json()
@@ -73,24 +79,22 @@ class TestFastAPIUsersAuthenticationE2E:
         # 3. Access protected endpoint with JWT token
         headers = {"Authorization": f"Bearer {login_info['access_token']}"}
 
-        me_response = client.get("/api/v1/auth/me", headers=headers)
+        me_response = await async_client.get("/api/v1/auth/me", headers=headers)
         assert me_response.status_code == 200
 
         user_profile = me_response.json()
         assert user_profile["email"] == "newuser@example.com"
         assert user_profile["is_active"] is True
 
-    @pytest.mark.skip(
-        reason="This test causes terminal freezing - investigating isolation issues"
-    )
-    def test_jwt_token_validation(self, client: TestClient):
+    @pytest.mark.asyncio
+    async def test_jwt_token_validation(self, async_client: AsyncClient):
         """Test JWT token validation and expiration."""
         # 1. Create and login a user
         user_data = {"email": "testuser@example.com", "password": "SecurePass123!"}
 
-        client.post("/api/v1/auth/users/register", json=user_data)
+        await async_client.post("/api/v1/auth/users/register", json=user_data)
 
-        login_response = client.post(
+        login_response = await async_client.post(
             "/api/v1/auth/jwt/login",
             data={"username": "testuser@example.com", "password": "SecurePass123!"},
         )
@@ -99,26 +103,29 @@ class TestFastAPIUsersAuthenticationE2E:
         headers = {"Authorization": f"Bearer {token}"}
 
         # 2. Test valid token access
-        me_response = client.get("/api/v1/auth/me", headers=headers)
+        me_response = await async_client.get("/api/v1/auth/me", headers=headers)
         assert me_response.status_code == 200
 
         # 3. Test invalid token access
-        invalid_headers = {"Authorization": f"Bearer invalid_token"}
-        invalid_response = client.get("/api/v1/auth/me", headers=invalid_headers)
+        invalid_headers = {"Authorization": "Bearer invalid_token"}
+        invalid_response = await async_client.get(
+            "/api/v1/auth/me", headers=invalid_headers
+        )
         assert invalid_response.status_code == 401
 
         # 4. Test missing token
-        no_token_response = client.get("/api/v1/auth/me")
+        no_token_response = await async_client.get("/api/v1/auth/me")
         assert no_token_response.status_code == 401
 
-    def test_user_profile_management(self, client: TestClient):
+    @pytest.mark.asyncio
+    async def test_user_profile_management(self, async_client: AsyncClient):
         """Test user profile update and management."""
         # 1. Create and login a user
         user_data = {"email": "profileuser@example.com", "password": "SecurePass123!"}
 
-        client.post("/api/v1/auth/users/register", json=user_data)
+        await async_client.post("/api/v1/auth/users/register", json=user_data)
 
-        login_response = client.post(
+        login_response = await async_client.post(
             "/api/v1/auth/jwt/login",
             data={"username": "profileuser@example.com", "password": "SecurePass123!"},
         )
@@ -129,7 +136,7 @@ class TestFastAPIUsersAuthenticationE2E:
         # 2. Update user profile
         update_data = {"first_name": "Updated", "last_name": "Profile"}
 
-        update_response = client.patch(
+        update_response = await async_client.patch(
             "/api/v1/auth/users/me", json=update_data, headers=headers
         )
         assert update_response.status_code == 200
@@ -139,7 +146,7 @@ class TestFastAPIUsersAuthenticationE2E:
         assert updated_user["last_name"] == "Profile"
 
         # 3. Verify profile was updated
-        me_response = client.get("/api/v1/auth/me", headers=headers)
+        me_response = await async_client.get("/api/v1/auth/me", headers=headers)
         assert me_response.status_code == 200
 
         user_profile = me_response.json()
@@ -147,9 +154,11 @@ class TestFastAPIUsersAuthenticationE2E:
         assert user_profile["last_name"] == "Profile"
 
     @pytest.mark.skip(
-        reason="Password change functionality not yet implemented - will be added in future sprint"
+        reason="Password change functionality not yet implemented - "
+        "will be added in future sprint"
     )
-    def test_password_change_flow(self, client: TestClient):
+    @pytest.mark.asyncio
+    async def test_password_change_flow(self, async_client: AsyncClient):
         """Test password change functionality.
 
         NOTE: This test is currently disabled as password change functionality
@@ -165,9 +174,9 @@ class TestFastAPIUsersAuthenticationE2E:
         # 1. Create and login a user
         user_data = {"email": "passuser@example.com", "password": "SecurePass123!"}
 
-        client.post("/api/v1/auth/users/register", json=user_data)
+        await async_client.post("/api/v1/auth/users/register", json=user_data)
 
-        login_response = client.post(
+        login_response = await async_client.post(
             "/api/v1/auth/jwt/login",
             data={"username": "passuser@example.com", "password": "SecurePass123!"},
         )
@@ -177,7 +186,7 @@ class TestFastAPIUsersAuthenticationE2E:
 
         # 2. For now, just verify the user can access their profile
         # Password change functionality will be implemented later
-        me_response = client.get("/api/v1/auth/me", headers=headers)
+        me_response = await async_client.get("/api/v1/auth/me", headers=headers)
         assert me_response.status_code == 200
 
         user_profile = me_response.json()
@@ -188,9 +197,11 @@ class TestFastAPIUsersAuthenticationE2E:
         # This test will be updated when password change is implemented
 
     @pytest.mark.skip(
-        reason="User deactivation functionality not yet implemented - will be added in future sprint"
+        reason="User deactivation functionality not yet implemented - "
+        "will be added in future sprint"
     )
-    def test_user_deactivation(self, client: TestClient):
+    @pytest.mark.asyncio
+    async def test_user_deactivation(self, async_client: AsyncClient):
         """Test user account deactivation.
 
         NOTE: This test is currently disabled as user deactivation functionality
@@ -209,9 +220,9 @@ class TestFastAPIUsersAuthenticationE2E:
             "password": "SecurePass123!",
         }
 
-        client.post("/api/v1/auth/users/register", json=user_data)
+        await async_client.post("/api/v1/auth/users/register", json=user_data)
 
-        login_response = client.post(
+        login_response = await async_client.post(
             "/api/v1/auth/jwt/login",
             data={
                 "username": "deactivateuser@example.com",
@@ -224,7 +235,7 @@ class TestFastAPIUsersAuthenticationE2E:
 
         # 2. For now, just verify the user can access their profile
         # User deactivation functionality will be implemented later
-        me_response = client.get("/api/v1/auth/me", headers=headers)
+        me_response = await async_client.get("/api/v1/auth/me", headers=headers)
         assert me_response.status_code == 200
 
         user_profile = me_response.json()
@@ -234,23 +245,24 @@ class TestFastAPIUsersAuthenticationE2E:
         # TODO: Implement user deactivation functionality
         # This test will be updated when deactivation is implemented
 
-    def test_multiple_user_sessions(self, client: TestClient):
+    @pytest.mark.asyncio
+    async def test_multiple_user_sessions(self, async_client: AsyncClient):
         """Test multiple users can have concurrent sessions."""
         # 1. Create two users
         user1_data = {"email": "user1@example.com", "password": "SecurePass123!"}
 
         user2_data = {"email": "user2@example.com", "password": "SecurePass123!"}
 
-        client.post("/api/v1/auth/users/register", json=user1_data)
-        client.post("/api/v1/auth/users/register", json=user2_data)
+        await async_client.post("/api/v1/auth/users/register", json=user1_data)
+        await async_client.post("/api/v1/auth/users/register", json=user2_data)
 
         # 2. Login both users
-        user1_login = client.post(
+        user1_login = await async_client.post(
             "/api/v1/auth/jwt/login",
             data={"username": "user1@example.com", "password": "SecurePass123!"},
         )
 
-        user2_login = client.post(
+        user2_login = await async_client.post(
             "/api/v1/auth/jwt/login",
             data={"username": "user2@example.com", "password": "SecurePass123!"},
         )
@@ -265,8 +277,8 @@ class TestFastAPIUsersAuthenticationE2E:
         user2_headers = {"Authorization": f"Bearer {user2_token}"}
 
         # 3. Both users can access their own profiles
-        user1_me = client.get("/api/v1/auth/me", headers=user1_headers)
-        user2_me = client.get("/api/v1/auth/me", headers=user2_headers)
+        user1_me = await async_client.get("/api/v1/auth/me", headers=user1_headers)
+        user2_me = await async_client.get("/api/v1/auth/me", headers=user2_headers)
 
         assert user1_me.status_code == 200
         assert user2_me.status_code == 200
@@ -281,14 +293,15 @@ class TestFastAPIUsersAuthenticationE2E:
         # This is inherent in JWT - each token contains the user's identity
         assert user1_profile["id"] != user2_profile["id"]
 
-    def test_logout_and_token_invalidation(self, client: TestClient):
+    @pytest.mark.asyncio
+    async def test_logout_and_token_invalidation(self, async_client: AsyncClient):
         """Test logout functionality and token handling."""
         # 1. Create and login a user
         user_data = {"email": "logoutuser@example.com", "password": "SecurePass123!"}
 
-        client.post("/api/v1/auth/users/register", json=user_data)
+        await async_client.post("/api/v1/auth/users/register", json=user_data)
 
-        login_response = client.post(
+        login_response = await async_client.post(
             "/api/v1/auth/jwt/login",
             data={"username": "logoutuser@example.com", "password": "SecurePass123!"},
         )
@@ -297,20 +310,22 @@ class TestFastAPIUsersAuthenticationE2E:
         headers = {"Authorization": f"Bearer {token}"}
 
         # 2. Verify token works
-        me_response = client.get("/api/v1/auth/me", headers=headers)
+        me_response = await async_client.get("/api/v1/auth/me", headers=headers)
         assert me_response.status_code == 200
 
         # 3. Test logout endpoint (FastAPI Users JWT logout)
-        logout_response = client.post("/api/v1/auth/jwt/logout", headers=headers)
-        assert (
-            logout_response.status_code == 204
-        )  # 204 No Content is correct for logout
+        logout_response = await async_client.post(
+            "/api/v1/auth/jwt/logout", headers=headers
+        )
+        # 204 No Content is correct for logout
+        assert logout_response.status_code == 204
 
         # 4. Note: JWT tokens are stateless, so they remain valid until expiration
         # This is expected behavior for JWT authentication
-        # In a production system, you might implement a token blacklist or shorter expiration times
+        # In a production system, you might implement a token blacklist or
+        # shorter expiration times
 
         # 5. Verify token still works (JWT is stateless)
-        me_after_logout = client.get("/api/v1/auth/me", headers=headers)
+        await async_client.get("/api/v1/auth/me", headers=headers)
         # This might still work depending on JWT configuration
         # The real security comes from short token expiration times

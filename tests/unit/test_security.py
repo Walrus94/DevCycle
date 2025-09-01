@@ -4,8 +4,6 @@ Unit tests for security features.
 This module tests the security middleware, headers, and rate limiting.
 """
 
-import pytest
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from devcycle.api.app import create_app
@@ -44,7 +42,8 @@ class TestSecurityFeatures:
         client = TestClient(app)
 
         # Make multiple requests to auth endpoint to trigger rate limiting
-        # Note: This is a simplified test - in practice, you'd need to test with real auth
+        # Note: This is a simplified test - in practice, you'd need to test
+        # with real auth
 
         # Test that auth endpoints exist and are protected
         response = client.get("/api/v1/auth/me")

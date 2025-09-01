@@ -7,7 +7,7 @@ CORS configuration, and basic endpoints.
 
 import time
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator, Callable, Dict, List
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -117,9 +117,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Shutting down DevCycle API server...")
 
 
-def create_app() -> FastAPI:
-    """Create and configure the FastAPI application."""
+def create_app(environment: Optional[str] = None) -> FastAPI:
+    """Create and configure the FastAPI application.
+
+    Args:
+        environment: Optional environment override. If provided, this will
+                    override the environment from config for this app instance.
+    """
     config = get_config()
+
+    # Override environment if specified
+    if environment:
+        config.environment = environment
 
     app = FastAPI(
         title="DevCycle API",
@@ -148,7 +157,6 @@ def _setup_middleware(app: FastAPI, config: Any) -> None:
     app.add_middleware(SecurityHeadersMiddleware)
 
     # Rate limiting middleware for auth endpoints
-    app.add_middleware(RateLimitMiddleware, max_requests=10, window_seconds=60)
 
     # CORS middleware
     app.add_middleware(

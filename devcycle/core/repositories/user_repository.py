@@ -100,7 +100,7 @@ class UserRepository(BaseRepository[User]):
         Returns:
             Number of active users
         """
-        stmt = select(self.model.id).where(self.model.is_active == True)
+        stmt = select(self.model.id).where(self.model.is_active.is_(True))
         result = await self.session.execute(stmt)
         return len(result.scalars().all())
 
@@ -111,7 +111,7 @@ class UserRepository(BaseRepository[User]):
         Returns:
             Number of verified users
         """
-        stmt = select(self.model.id).where(self.model.is_verified == True)
+        stmt = select(self.model.id).where(self.model.is_verified.is_(True))
         result = await self.session.execute(stmt)
         return len(result.scalars().all())
 

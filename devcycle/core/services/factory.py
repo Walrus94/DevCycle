@@ -138,6 +138,12 @@ def get_service_factory(
             repository_factory = get_repository_factory()  # type: ignore[call-arg]
 
         _service_factory = ServiceFactory(repository_factory)
+    elif (
+        repository_factory is not None
+        and _service_factory.repository_factory is not repository_factory
+    ):
+        # If a different repository factory is provided, create a new service factory
+        _service_factory = ServiceFactory(repository_factory)
 
     return _service_factory
 

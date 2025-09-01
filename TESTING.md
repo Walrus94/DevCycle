@@ -42,28 +42,7 @@ poetry run pytest tests/e2e/test_auth_fastapi_users_e2e.py -v
 poetry run pytest tests/e2e/test_auth_fastapi_users_e2e.py::TestFastAPIUsersAuthenticationE2E::test_user_registration_and_login_flow -v
 ```
 
-### Option 2: Python Test Runner Script (Recommended)
-
-```bash
-# Run all tests in sequence
-python run_tests.py
-
-# Run specific test types
-python run_tests.py --type unit
-python run_tests.py --type integration
-python run_tests.py --type e2e
-
-# Run specific E2E batch
-python run_tests.py --type e2e --batch 1
-python run_tests.py --type e2e --batch 2
-python run_tests.py --type e2e --batch 3
-python run_tests.py --type e2e --batch 4
-
-# Run quietly (less verbose output)
-python run_tests.py --quiet
-```
-
-### Option 3: Windows Batch File
+### Option 2: Windows Batch File
 
 ```cmd
 # Double-click or run from command line
@@ -124,9 +103,8 @@ The following tests are temporarily skipped due to isolation issues:
 
 **Solutions**:
 1. **Use batch approach**: Run tests in batches of 3-4
-2. **Use test runner script**: `python run_tests.py --type e2e`
-3. **Run individual tests**: Use specific test paths
-4. **Check resource cleanup**: Ensure Docker containers are stopped
+2. **Run individual tests**: Use specific test paths
+3. **Check resource cleanup**: Ensure Docker containers are stopped
 
 ### Database Connection Issues
 **Problem**: Database connection errors or timeouts

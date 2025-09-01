@@ -14,6 +14,7 @@ from .settings import (
     RedisConfig,
     get_config,
     reload_config,
+    set_config,
 )
 
 __all__ = [
@@ -25,4 +26,5 @@ __all__ = [
     "HuggingFaceConfig",
     "get_config",
     "reload_config",
+    "set_config",
 ]

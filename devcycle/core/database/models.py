@@ -11,8 +11,7 @@ from uuid import UUID
 
 from sqlalchemy import DateTime, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, declarative_base, mapped_column
 from sqlalchemy.sql import func
 
 Base: Any = declarative_base()
@@ -41,4 +40,7 @@ class AuditLog(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<AuditLog(id={self.id}, action='{self.action}', resource='{self.resource}')>"
+        return (
+            f"<AuditLog(id={self.id}, action='{self.action}', "
+            f"resource='{self.resource}')>"
+        )

@@ -6,7 +6,7 @@ including registration, health monitoring, and task tracking.
 """
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
@@ -78,7 +78,7 @@ class AgentRepository(BaseRepository[Agent]):
         stmt = (
             update(self.model)
             .where(self.model.id == agent_id)
-            .values(status=status.value, updated_at=datetime.utcnow())
+            .values(status=status.value, updated_at=datetime.now(timezone.utc))
             .returning(self.model)
         )
         result = await self.session.execute(stmt)
@@ -100,9 +100,9 @@ class AgentRepository(BaseRepository[Agent]):
 
         update_data: Dict[str, Any] = {
             "status": status.value,
-            "last_heartbeat": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
-            "last_seen": datetime.utcnow(),
+            "last_heartbeat": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc),
+            "last_seen": datetime.now(timezone.utc),
         }
 
         if response_time_ms is not None:
@@ -128,7 +128,7 @@ class AgentRepository(BaseRepository[Agent]):
 
     async def get_stale_agents(self, timeout_minutes: int = 5) -> List[Agent]:
         """Get agents that haven't sent a heartbeat in the specified timeout."""
-        cutoff_time = datetime.utcnow() - timedelta(minutes=timeout_minutes)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=timeout_minutes)
         stmt = select(self.model).where(
             and_(
                 self.model.is_active.is_(True), self.model.last_heartbeat < cutoff_time
@@ -149,7 +149,7 @@ class AgentRepository(BaseRepository[Agent]):
             .values(
                 is_active=False,
                 status=AgentStatus.OFFLINE.value,
-                updated_at=datetime.utcnow(),
+                updated_at=datetime.now(timezone.utc),
             )
             .returning(self.model)
         )
@@ -165,7 +165,7 @@ class AgentRepository(BaseRepository[Agent]):
             .values(
                 is_active=True,
                 status=AgentStatus.OFFLINE.value,
-                updated_at=datetime.utcnow(),
+                updated_at=datetime.now(timezone.utc),
             )
             .returning(self.model)
         )
@@ -279,12 +279,12 @@ class AgentTaskRepository(BaseRepository[AgentTask]):
         error: Optional[str] = None,
     ) -> Optional[AgentTask]:
         """Update task status and result."""
-        update_data = {"status": status, "updated_at": datetime.utcnow()}
+        update_data = {"status": status, "updated_at": datetime.now(timezone.utc)}
 
         if status == "running":
-            update_data["started_at"] = datetime.utcnow()
+            update_data["started_at"] = datetime.now(timezone.utc)
         elif status in ["completed", "failed"]:
-            update_data["completed_at"] = datetime.utcnow()
+            update_data["completed_at"] = datetime.now(timezone.utc)
 
         if result is not None:
             update_data["result"] = json.dumps(result)

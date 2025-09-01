@@ -110,7 +110,7 @@ class BaseRepository(Generic[T], ABC):
             .returning(self.model)
         )
 
-        result = await self.session.execute(stmt)
+        await self.session.execute(stmt)
         await self.session.commit()
 
         # Refresh the entity to get updated values

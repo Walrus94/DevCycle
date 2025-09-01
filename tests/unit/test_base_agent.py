@@ -20,7 +20,7 @@ import pytest
 from devcycle.agents.base import AgentFactory, AgentResult, AgentStatus, BaseAgent
 
 
-class TestAgent(BaseAgent):
+class MockAgent(BaseAgent):
     """Concrete test agent implementation for testing BaseAgent."""
 
     async def process(self, input_data, **kwargs):
@@ -35,7 +35,7 @@ class TestAgent(BaseAgent):
         return input_data is not None and isinstance(input_data, str)
 
 
-class TestAgentWithError(BaseAgent):
+class MockAgentWithError(BaseAgent):
     """Test agent that raises errors for testing error handling."""
 
     async def process(self, input_data, **kwargs):
@@ -47,7 +47,7 @@ class TestAgentWithError(BaseAgent):
         return True
 
 
-class TestAgentWithValidationError(BaseAgent):
+class MockAgentWithValidationError(BaseAgent):
     """Test agent that fails validation."""
 
     async def process(self, input_data, **kwargs):
@@ -62,19 +62,19 @@ class TestAgentWithValidationError(BaseAgent):
 @pytest.fixture
 def test_agent():
     """Create a test agent instance."""
-    return TestAgent("test_agent")
+    return MockAgent("test_agent")
 
 
 @pytest.fixture
 def error_agent():
     """Create an agent that raises errors."""
-    return TestAgentWithError("error_agent")
+    return MockAgentWithError("error_agent")
 
 
 @pytest.fixture
 def validation_error_agent():
     """Create an agent that fails validation."""
-    return TestAgentWithValidationError("validation_error_agent")
+    return MockAgentWithValidationError("validation_error_agent")
 
 
 @pytest.mark.unit
@@ -141,7 +141,7 @@ class TestBaseAgent:
             mock_config.get_agent_config.return_value = {"timeout": 30}
             mock_get_config.return_value = mock_config
 
-            agent = TestAgent("config_test", {"custom": "value"})
+            agent = MockAgent("config_test", {"custom": "value"})
             assert agent.config["timeout"] == 30
             assert agent.config["custom"] == "value"
 
@@ -155,7 +155,7 @@ class TestBaseAgent:
     async def test_agent_process_abstract_method(self):
         """Test that abstract methods are properly defined."""
         # This should work without raising NotImplementedError
-        agent = TestAgent("abstract_test")
+        agent = MockAgent("abstract_test")
         result = await agent.process("test input")
         assert isinstance(result, AgentResult)
         assert result.success is True
@@ -165,11 +165,11 @@ class TestBaseAgent:
         str_repr = str(test_agent)
         repr_repr = repr(test_agent)
 
-        assert "TestAgent" in str_repr
+        assert "MockAgent" in str_repr
         assert "test_agent" in str_repr
         assert "idle" in str_repr
 
-        assert "TestAgent" in repr_repr
+        assert "MockAgent" in repr_repr
         assert "test_agent" in repr_repr
         assert "idle" in repr_repr
 
@@ -345,21 +345,21 @@ class TestAgentFactory:
     def test_agent_registration(self):
         """Test registering agent classes."""
         # Register test agent
-        AgentFactory.register("test", TestAgent)
+        AgentFactory.register("test", MockAgent)
 
         # Verify registration
         assert "test" in AgentFactory.list_agents()
-        assert AgentFactory._agents["test"] == TestAgent
+        assert AgentFactory._agents["test"] == MockAgent
 
     def test_agent_creation(self):
         """Test creating agent instances."""
         # Register first
-        AgentFactory.register("test", TestAgent)
+        AgentFactory.register("test", MockAgent)
 
         # Create instance
         agent = AgentFactory.create("test_instance", "test")
 
-        assert isinstance(agent, TestAgent)
+        assert isinstance(agent, MockAgent)
         assert agent.name == "test_instance"
 
     def test_agent_creation_unknown_type(self):
@@ -382,8 +382,8 @@ class TestAgentFactory:
         AgentFactory._agents.clear()
 
         # Register some agents
-        AgentFactory.register("test1", TestAgent)
-        AgentFactory.register("test2", TestAgent)
+        AgentFactory.register("test1", MockAgent)
+        AgentFactory.register("test2", MockAgent)
 
         agents = AgentFactory.list_agents()
         assert "test1" in agents
@@ -398,7 +398,7 @@ class TestAgentIntegration:
     @pytest.mark.asyncio
     async def test_agent_execution_lifecycle(self):
         """Test agent execution lifecycle."""
-        agent = TestAgent("lifecycle_test")
+        agent = MockAgent("lifecycle_test")
 
         # Initial state
         assert agent.status == AgentStatus.IDLE
@@ -415,7 +415,7 @@ class TestAgentIntegration:
     @pytest.mark.asyncio
     async def test_agent_reset_lifecycle(self):
         """Test agent reset functionality."""
-        agent = TestAgent("reset_test")
+        agent = MockAgent("reset_test")
 
         # Execute first
         result = await agent.execute("test input")
@@ -432,8 +432,8 @@ class TestAgentIntegration:
     @pytest.mark.asyncio
     async def test_multiple_agents(self):
         """Test multiple agents working independently."""
-        agent1 = TestAgent("agent1")
-        agent2 = TestAgent("agent2")
+        agent1 = MockAgent("agent1")
+        agent2 = MockAgent("agent2")
 
         # Execute both agents
         result1 = await agent1.execute("input1")

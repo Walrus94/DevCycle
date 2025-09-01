@@ -4,8 +4,7 @@ Unit tests for repository factory functionality.
 This module tests the RepositoryFactory class and its repository creation methods.
 """
 
-from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
+from unittest.mock import AsyncMock
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession

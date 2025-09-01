@@ -54,6 +54,7 @@ class TestKafkaTopicManagement:
             return_value=mock_admin,
         ):
             await kafka_queue.initialize()
+            await kafka_queue.close()
 
             # Verify topic creation was called with correct parameters
             mock_admin.create_topics.assert_called_once()
@@ -81,6 +82,7 @@ class TestKafkaTopicManagement:
         ):
             # Should not raise an exception
             await kafka_queue.ensure_topics()
+            # No init started; nothing to close here
 
             # Verify topic creation was attempted
             mock_admin.create_topics.assert_called_once()

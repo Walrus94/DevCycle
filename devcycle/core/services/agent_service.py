@@ -6,7 +6,7 @@ including registration, health monitoring, discovery, and lifecycle management.
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
@@ -20,6 +20,7 @@ from ..agents.models import (
     AgentResponse,
     AgentStatus,
     AgentTask,
+    AgentTaskResponse,
     AgentType,
     AgentUpdate,
 )
@@ -62,7 +63,7 @@ class AgentService(BaseService[Agent]):
             "capabilities": json.dumps(
                 [cap.value for cap in registration.capabilities]
             ),
-            "configuration": json.dumps(registration.configuration.dict()),
+            "configuration": json.dumps(registration.configuration.model_dump()),
             "metadata_json": json.dumps(registration.metadata),
             "status": AgentStatus.OFFLINE.value,
             "is_active": True,
@@ -102,7 +103,9 @@ class AgentService(BaseService[Agent]):
                 [cap.value for cap in update_data.capabilities]
             )
         if update_data.configuration is not None:
-            update_dict["configuration"] = json.dumps(update_data.configuration.dict())
+            update_dict["configuration"] = json.dumps(
+                update_data.configuration.model_dump()
+            )
         if update_data.metadata is not None:
             update_dict["metadata_json"] = json.dumps(update_data.metadata)
 
@@ -206,7 +209,7 @@ class AgentService(BaseService[Agent]):
 
         return AgentHealth(
             status=AgentStatus(agent.status),
-            last_heartbeat=agent.last_heartbeat or datetime.utcnow(),
+            last_heartbeat=agent.last_heartbeat or datetime.now(timezone.utc),
             response_time_ms=agent.response_time_ms,
             error_count=agent.error_count,
             last_error=agent.last_error,
@@ -258,9 +261,10 @@ class AgentService(BaseService[Agent]):
 
         return task
 
-    async def get_agent_tasks(self, agent_id: UUID) -> List[AgentTask]:
+    async def get_agent_tasks(self, agent_id: UUID) -> List[AgentTaskResponse]:
         """Get all tasks for an agent."""
-        return await self.task_repository.get_tasks_by_agent(agent_id)
+        tasks = await self.task_repository.get_tasks_by_agent(agent_id)
+        return [await self._to_agent_task_response(task) for task in tasks]
 
     async def update_task_status(
         self,
@@ -293,11 +297,26 @@ class AgentService(BaseService[Agent]):
 
     async def get_agent_task_history(
         self, agent_id: UUID, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[AgentTask]:
+    ) -> List[AgentTaskResponse]:
         """Get task history for an agent."""
-        return await self.task_repository.get_agent_task_history(
+        tasks = await self.task_repository.get_agent_task_history(
             agent_id, limit, offset
         )
+        return [await self._to_agent_task_response(task) for task in tasks]
+
+    async def get_by_id(self, agent_id: UUID) -> Optional[AgentResponse]:
+        """Get agent by ID and convert to response model."""
+        agent = await self.repository.get_by_id(agent_id)
+        if not agent:
+            return None
+        return await self._to_agent_response(agent)
+
+    async def get_all(
+        self, limit: Optional[int] = None, offset: Optional[int] = None
+    ) -> List[AgentResponse]:
+        """Get all agents and convert to response models."""
+        agents = await self.repository.get_all(limit=limit, offset=offset)
+        return [await self._to_agent_response(agent) for agent in agents]
 
     async def validate_business_rules(self, entity: Agent, **kwargs: Any) -> bool:
         """Validate business rules for agent operations."""
@@ -349,7 +368,7 @@ class AgentService(BaseService[Agent]):
         # Create health object
         health = AgentHealth(
             status=AgentStatus(agent.status),
-            last_heartbeat=agent.last_heartbeat or datetime.utcnow(),
+            last_heartbeat=agent.last_heartbeat or datetime.now(timezone.utc),
             response_time_ms=agent.response_time_ms,
             error_count=agent.error_count,
             last_error=agent.last_error,
@@ -373,4 +392,28 @@ class AgentService(BaseService[Agent]):
             created_at=agent.created_at,
             updated_at=agent.updated_at,
             last_seen=agent.last_seen or agent.created_at,
+        )
+
+    async def _to_agent_task_response(self, task: AgentTask) -> AgentTaskResponse:
+        """Convert AgentTask model to AgentTaskResponse."""
+        # Parse JSON fields
+        try:
+            parameters = json.loads(task.parameters) if task.parameters else {}
+            result = json.loads(task.result) if task.result else None
+        except json.JSONDecodeError:
+            parameters = {}
+            result = None
+
+        return AgentTaskResponse(
+            id=task.id,
+            agent_id=task.agent_id,
+            task_type=task.task_type,
+            status=task.status,
+            parameters=parameters,
+            result=result,
+            error=task.error,
+            created_at=task.created_at,
+            updated_at=task.updated_at,
+            started_at=task.started_at,
+            completed_at=task.completed_at,
         )

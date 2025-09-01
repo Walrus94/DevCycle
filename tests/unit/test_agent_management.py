@@ -5,6 +5,7 @@ This module tests the core functionality of the agent management system
 including models, repositories, services, and API endpoints.
 """
 
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
@@ -113,6 +114,7 @@ class TestAgentRepository:
             is_active=True,
         )
 
+    @pytest.mark.asyncio
     async def test_get_by_name(
         self,
         agent_repository: AgentRepository,
@@ -120,13 +122,18 @@ class TestAgentRepository:
         sample_agent: Agent,
     ) -> None:
         """Test getting agent by name."""
-        mock_session.execute.return_value.scalar_one_or_none.return_value = sample_agent
+        # Create a proper mock result object
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = sample_agent
+        # Mock execute as an async method that returns the result
+        mock_session.execute = AsyncMock(return_value=mock_result)
 
         result = await agent_repository.get_by_name("test_agent")
 
         assert result == sample_agent
         mock_session.execute.assert_called_once()
 
+    @pytest.mark.asyncio
     async def test_get_by_type(
         self,
         agent_repository: AgentRepository,
@@ -134,15 +141,20 @@ class TestAgentRepository:
         sample_agent: Agent,
     ) -> None:
         """Test getting agents by type."""
-        mock_session.execute.return_value.scalars.return_value.all.return_value = [
-            sample_agent
-        ]
+        # Create a proper mock result object
+        mock_result = MagicMock()
+        mock_scalars = MagicMock()
+        mock_scalars.all.return_value = [sample_agent]
+        mock_result.scalars.return_value = mock_scalars
+        # Mock execute as an async method that returns the result
+        mock_session.execute = AsyncMock(return_value=mock_result)
 
         result = await agent_repository.get_by_type(AgentType.BUSINESS_ANALYST)
 
         assert result == [sample_agent]
         mock_session.execute.assert_called_once()
 
+    @pytest.mark.asyncio
     async def test_get_online_agents(
         self,
         agent_repository: AgentRepository,
@@ -150,9 +162,13 @@ class TestAgentRepository:
         sample_agent: Agent,
     ) -> None:
         """Test getting online agents."""
-        mock_session.execute.return_value.scalars.return_value.all.return_value = [
-            sample_agent
-        ]
+        # Create a proper mock result object
+        mock_result = MagicMock()
+        mock_scalars = MagicMock()
+        mock_scalars.all.return_value = [sample_agent]
+        mock_result.scalars.return_value = mock_scalars
+        # Mock execute as an async method that returns the result
+        mock_session.execute = AsyncMock(return_value=mock_result)
 
         result = await agent_repository.get_online_agents()
 
@@ -191,6 +207,7 @@ class TestAgentService:
             description="Test agent",
         )
 
+    @pytest.mark.asyncio
     async def test_register_agent_success(
         self,
         agent_service: AgentService,
@@ -201,20 +218,27 @@ class TestAgentService:
         # Mock repository responses
         mock_agent_repository.get_by_name.return_value = None
 
-        mock_agent = MagicMock()
-        mock_agent.id = uuid4()
-        mock_agent.name = "test_agent"
-        mock_agent.agent_type = "business_analyst"
-        mock_agent.description = "Test agent"
-        mock_agent.version = "1.0.0"
-        mock_agent.capabilities = '["analysis"]'
-        mock_agent.configuration = '{"max_concurrent_tasks": 1}'
-        mock_agent.metadata_json = "{}"
-        mock_agent.status = "offline"
-        mock_agent.is_active = True
-        mock_agent.created_at = "2024-01-01T00:00:00Z"
-        mock_agent.updated_at = "2024-01-01T00:00:00Z"
-        mock_agent.last_seen = None
+        # Create a proper Agent object instead of MagicMock
+        mock_agent = Agent(
+            id=uuid4(),
+            name="test_agent",
+            agent_type="business_analyst",
+            description="Test agent",
+            version="1.0.0",
+            capabilities='["analysis"]',
+            configuration='{"max_concurrent_tasks": 1}',
+            metadata_json="{}",
+            status="offline",
+            is_active=True,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            last_seen=None,
+            last_heartbeat=None,
+            response_time_ms=None,
+            error_count=0,
+            last_error=None,
+            uptime_seconds=0,
+        )
 
         # Mock the repository create method
         mock_repository = AsyncMock()
@@ -227,6 +251,7 @@ class TestAgentService:
         mock_agent_repository.get_by_name.assert_called_once_with("test_agent")
         mock_repository.create.assert_called_once()
 
+    @pytest.mark.asyncio
     async def test_register_agent_duplicate_name(
         self,
         agent_service: AgentService,
@@ -242,10 +267,14 @@ class TestAgentService:
         ):
             await agent_service.register_agent(sample_registration)
 
+    @pytest.mark.asyncio
     async def test_register_agent_no_capabilities(
         self, agent_service: AgentService, mock_agent_repository: AsyncMock
     ) -> None:
         """Test agent registration without capabilities."""
+        # Mock the repository to return None (no existing agent)
+        mock_agent_repository.get_by_name.return_value = None
+
         registration = AgentRegistration(
             name="test_agent",
             agent_type=AgentType.BUSINESS_ANALYST,
@@ -256,11 +285,54 @@ class TestAgentService:
         with pytest.raises(ValueError, match="Agent must have at least one capability"):
             await agent_service.register_agent(registration)
 
+    @pytest.mark.asyncio
     async def test_get_agents_by_type(
         self, agent_service: AgentService, mock_agent_repository: AsyncMock
     ) -> None:
         """Test getting agents by type."""
-        mock_agents = [MagicMock(), MagicMock()]
+        # Create proper Agent objects instead of MagicMock
+        mock_agents = [
+            Agent(
+                id=uuid4(),
+                name="agent1",
+                agent_type="business_analyst",
+                description="Test agent 1",
+                version="1.0.0",
+                capabilities='["analysis"]',
+                configuration='{"max_concurrent_tasks": 1}',
+                metadata_json="{}",
+                status="online",
+                is_active=True,
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
+                last_seen=None,
+                last_heartbeat=None,
+                response_time_ms=None,
+                error_count=0,
+                last_error=None,
+                uptime_seconds=0,
+            ),
+            Agent(
+                id=uuid4(),
+                name="agent2",
+                agent_type="business_analyst",
+                description="Test agent 2",
+                version="1.0.0",
+                capabilities='["analysis"]',
+                configuration='{"max_concurrent_tasks": 1}',
+                metadata_json="{}",
+                status="online",
+                is_active=True,
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
+                last_seen=None,
+                last_heartbeat=None,
+                response_time_ms=None,
+                error_count=0,
+                last_error=None,
+                uptime_seconds=0,
+            ),
+        ]
         mock_agent_repository.get_by_type.return_value = mock_agents
 
         result = await agent_service.get_agents_by_type(AgentType.BUSINESS_ANALYST)
@@ -270,11 +342,54 @@ class TestAgentService:
             AgentType.BUSINESS_ANALYST
         )
 
+    @pytest.mark.asyncio
     async def test_get_online_agents(
         self, agent_service: AgentService, mock_agent_repository: AsyncMock
     ) -> None:
         """Test getting online agents."""
-        mock_agents = [MagicMock(), MagicMock()]
+        # Create proper Agent objects instead of MagicMock
+        mock_agents = [
+            Agent(
+                id=uuid4(),
+                name="agent1",
+                agent_type="business_analyst",
+                description="Test agent 1",
+                version="1.0.0",
+                capabilities='["analysis"]',
+                configuration='{"max_concurrent_tasks": 1}',
+                metadata_json="{}",
+                status="online",
+                is_active=True,
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
+                last_seen=None,
+                last_heartbeat=None,
+                response_time_ms=None,
+                error_count=0,
+                last_error=None,
+                uptime_seconds=0,
+            ),
+            Agent(
+                id=uuid4(),
+                name="agent2",
+                agent_type="business_analyst",
+                description="Test agent 2",
+                version="1.0.0",
+                capabilities='["analysis"]',
+                configuration='{"max_concurrent_tasks": 1}',
+                metadata_json="{}",
+                status="online",
+                is_active=True,
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
+                last_seen=None,
+                last_heartbeat=None,
+                response_time_ms=None,
+                error_count=0,
+                last_error=None,
+                uptime_seconds=0,
+            ),
+        ]
         mock_agent_repository.get_online_agents.return_value = mock_agents
 
         result = await agent_service.get_online_agents()

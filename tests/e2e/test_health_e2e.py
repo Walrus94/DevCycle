@@ -5,27 +5,32 @@ This module tests the health endpoints in a real environment
 to ensure they work properly with the FastAPI app.
 """
 
+import time
+
 import pytest
-from fastapi.testclient import TestClient
+from httpx import AsyncClient
 
 
 @pytest.mark.e2e
 @pytest.mark.health
+@pytest.mark.asyncio
 class TestHealthEndpointsE2E:
     """Test health endpoints in end-to-end environment."""
 
-    def test_health_check_endpoint(self, client: TestClient):
+    @pytest.mark.asyncio
+    async def test_health_check_endpoint(self, async_client: AsyncClient):
         """Test basic health check endpoint."""
-        response = client.get("/api/v1/health")
+        response = await async_client.get("/api/v1/health")
         assert response.status_code == 200
 
         data = response.json()
         assert "status" in data
         assert data["status"] == "healthy"
 
-    def test_detailed_health_check(self, client: TestClient):
+    @pytest.mark.asyncio
+    async def test_detailed_health_check(self, async_client: AsyncClient):
         """Test detailed health check endpoint."""
-        response = client.get("/api/v1/health/detailed")
+        response = await async_client.get("/api/v1/health/detailed")
         assert response.status_code == 200
 
         data = response.json()
@@ -34,25 +39,28 @@ class TestHealthEndpointsE2E:
         assert "metrics" in data
         assert "uptime" in data["metrics"]
 
-    def test_readiness_check(self, client: TestClient):
+    @pytest.mark.asyncio
+    async def test_readiness_check(self, async_client: AsyncClient):
         """Test readiness check endpoint."""
-        response = client.get("/api/v1/health/ready")
+        response = await async_client.get("/api/v1/health/ready")
         assert response.status_code == 200
 
         data = response.json()
         assert "status" in data
         assert data["status"] == "ready"
 
-    def test_liveness_check(self, client: TestClient):
+    @pytest.mark.asyncio
+    async def test_liveness_check(self, async_client: AsyncClient):
         """Test liveness check endpoint."""
-        response = client.get("/api/v1/health/live")
+        response = await async_client.get("/api/v1/health/live")
         assert response.status_code == 200
 
         data = response.json()
         assert "status" in data
         assert data["status"] == "alive"
 
-    def test_health_endpoints_consistency(self, client: TestClient):
+    @pytest.mark.asyncio
+    async def test_health_endpoints_consistency(self, async_client: AsyncClient):
         """Test that all health endpoints return consistent data."""
         endpoints = [
             "/api/v1/health",
@@ -62,17 +70,16 @@ class TestHealthEndpointsE2E:
         ]
 
         for endpoint in endpoints:
-            response = client.get(endpoint)
+            response = await async_client.get(endpoint)
             assert response.status_code == 200
 
             data = response.json()
             assert "status" in data
             assert data["status"] in ["healthy", "ready", "alive"]
 
-    def test_health_endpoints_performance(self, client: TestClient):
+    @pytest.mark.asyncio
+    async def test_health_endpoints_performance(self, async_client: AsyncClient):
         """Test that health endpoints respond quickly."""
-        import time
-
         endpoints = [
             "/api/v1/health",
             "/api/v1/health/detailed",
@@ -82,7 +89,7 @@ class TestHealthEndpointsE2E:
 
         for endpoint in endpoints:
             start_time = time.time()
-            response = client.get(endpoint)
+            response = await async_client.get(endpoint)
             end_time = time.time()
 
             assert response.status_code == 200

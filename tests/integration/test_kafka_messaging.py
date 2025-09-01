@@ -211,6 +211,9 @@ class TestKafkaMessageQueue:
             mock_producer.assert_called_once()
             mock_consumer.assert_called_once()
 
+            # Ensure background consumer task is cleaned up to avoid pending-task logs
+            await queue.close()
+
     @pytest.mark.asyncio
     async def test_kafka_queue_initialize_already_running(
         self, queue_config: MessagingConfig
@@ -263,6 +266,8 @@ class TestKafkaMessageQueue:
             mock_get.return_value = "test_message"
             result = await queue.get()
             assert result == "test_message"  # type: ignore[comparison-overlap]
+            # Cleanup to avoid pending consumer task warnings
+            await queue.close()
 
     @pytest.mark.asyncio
     async def test_kafka_queue_get_message_timeout(
@@ -277,6 +282,8 @@ class TestKafkaMessageQueue:
             mock_get.return_value = None
             result = await queue.get(timeout=1.0)
             assert result is None
+            # Cleanup to avoid pending consumer task warnings
+            await queue.close()
 
     @pytest.mark.asyncio
     async def test_kafka_queue_get_message_not_initialized(
@@ -409,6 +416,8 @@ class TestKafkaMessageRouting:
             call_args = mock_send.call_args[0][0]
             assert call_args["message"]["body"]["action"] == "test_action"
             assert call_args["priority"] == QueuePriority.HIGH.value
+            # Cleanup
+            await queue.close()
 
     @pytest.mark.asyncio
     async def test_message_routing_with_metadata(
@@ -563,3 +572,5 @@ class TestKafkaErrorHandling:
 
             with pytest.raises(Exception, match="Send failed"):
                 await queue.put(test_message)
+            # Cleanup
+            await queue.close()

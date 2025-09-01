@@ -1,8 +1,10 @@
+import os
+import sys
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
 
-from alembic import context
+from alembic import context  # type: ignore[attr-defined]
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -13,16 +15,12 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-import os
-
-# Import our models for autogenerate support
-import sys
-
 # Add the project root to the Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from devcycle.core.config import get_config
-from devcycle.core.database.models import Base
+# Import after path setup
+from devcycle.core.config import get_config  # noqa: E402
+from devcycle.core.database.models import Base  # noqa: E402
 
 # Set target metadata for autogenerate
 target_metadata = Base.metadata
@@ -49,9 +47,15 @@ def run_migrations_offline() -> None:
     try:
         db_config = get_config().database
         if db_config.password:
-            url = f"postgresql://{db_config.username}:{db_config.password}@{db_config.host}:{db_config.port}/{db_config.database}"
+            url = (
+                f"postgresql://{db_config.username}:{db_config.password}"
+                f"@{db_config.host}:{db_config.port}/{db_config.database}"
+            )
         else:
-            url = f"postgresql://{db_config.username}@{db_config.host}:{db_config.port}/{db_config.database}"
+            url = (
+                f"postgresql://{db_config.username}"
+                f"@{db_config.host}:{db_config.port}/{db_config.database}"
+            )
     except Exception:
         # Fallback to alembic.ini URL
         url = config.get_main_option("sqlalchemy.url")

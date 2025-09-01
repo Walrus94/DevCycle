@@ -4,7 +4,7 @@ Unit tests for user service functionality.
 This module tests the UserService class and its user-specific business logic.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest

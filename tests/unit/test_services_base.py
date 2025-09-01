@@ -4,7 +4,7 @@ Unit tests for base service functionality.
 This module tests the BaseService class and its common service operations.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest

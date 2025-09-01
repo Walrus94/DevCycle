@@ -45,29 +45,23 @@ Tests are categorized using `pytest` markers, defined in `pyproject.toml`. You c
 
 ## How to Run Tests
 
-You can use the `scripts/run-tests.py` utility for convenient execution of different test types.
+Use pytest directly to run different test types:
 
 ```bash
 # Run all unit tests
-poetry run python scripts/run-tests.py unit
+poetry run pytest tests/unit/ -v
 
 # Run all integration tests
-poetry run python scripts/run-tests.py integration
+poetry run pytest tests/integration/ -v
 
 # Run all API tests
-poetry run python scripts/run-tests.py api
+poetry run pytest tests/api/ -v
 
 # Run all end-to-end tests (requires Docker to be running)
-poetry run python scripts/run-tests.py e2e
+poetry run pytest tests/e2e/ -v
 
 # Run all tests (including E2E)
-poetry run python scripts/run-tests.py all
-
-# You can also use pytest directly with directories:
-poetry run pytest tests/unit/
-poetry run pytest tests/integration/
-poetry run pytest tests/api/
-poetry run pytest tests/e2e/
+poetry run pytest tests/ -v
 
 # Or use markers:
 poetry run pytest -m unit

@@ -4,8 +4,7 @@ Unit tests for service factory functionality.
 This module tests the ServiceFactory class and its service creation methods.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -64,7 +63,8 @@ class TestServiceFactory:
 
         # Assert
         assert first_service is second_service  # Same instance
-        mock_repository_factory.get_user_repository.assert_called_once()  # Only called once
+        # Only called once
+        mock_repository_factory.get_user_repository.assert_called_once()
 
     def test_get_service_by_class(self, service_factory):
         """Test getting service by class."""

@@ -11,7 +11,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi_users import schemas
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ...core.auth.fastapi_users import auth_backend, current_active_user, fastapi_users
 from ...core.auth.models import User
@@ -35,8 +35,7 @@ class UserInfo(BaseModel):
     last_name: Optional[str] = Field(None, description="User last name")
     role: str = Field(..., description="User role (user/admin)")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserCreate(BaseModel):
@@ -45,8 +44,7 @@ class UserCreate(BaseModel):
     email: str = Field(..., description="User email address")
     password: str = Field(..., description="User password")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserUpdate(BaseModel):
@@ -58,8 +56,7 @@ class UserUpdate(BaseModel):
     first_name: Optional[str] = Field(None, description="User first name")
     last_name: Optional[str] = Field(None, description="User last name")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserProfileUpdate(schemas.BaseUserUpdate):
@@ -69,8 +66,7 @@ class UserProfileUpdate(schemas.BaseUserUpdate):
     last_name: Optional[str] = Field(None, description="User last name")
     role: Optional[str] = Field(None, description="User role (user/admin)")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserList(BaseModel):

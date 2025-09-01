@@ -443,7 +443,8 @@ class UserService(BaseService[User]):
         if len(password) < 8:
             return False
 
-        # Must contain at least one uppercase letter, one lowercase letter, and one digit
+        # Must contain at least one uppercase letter, one lowercase letter,
+        # and one digit
         has_upper = any(c.isupper() for c in password)
         has_lower = any(c.islower() for c in password)
         has_digit = any(c.isdigit() for c in password)

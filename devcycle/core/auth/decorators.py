@@ -13,7 +13,7 @@ from .models import User
 
 def require_role(required_role: str = "admin") -> Callable[[Callable], Callable]:
     """
-    Decorator to require a specific role for endpoint access.
+    Require a specific role for endpoint access.
 
     Args:
         required_role: The minimum role required (default: "admin")
@@ -28,8 +28,10 @@ def require_role(required_role: str = "admin") -> Callable[[Callable], Callable]
         @wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Get the current user from the request context
-            # This is a simplified version - in practice, you'd get the user from the request
-            # For now, we'll assume the endpoint is already protected by FastAPI Users auth
+            # This is a simplified version - in practice, you'd get the user
+            # from the request
+            # For now, we'll assume the endpoint is already protected by
+            # FastAPI Users auth
 
             # Check if user has required role
             # This would typically be done by getting the user from the request
@@ -46,7 +48,7 @@ def require_role(required_role: str = "admin") -> Callable[[Callable], Callable]
 
 def require_admin(func: Callable) -> Callable:
     """
-    Decorator to require admin role for endpoint access.
+    Require admin role for endpoint access.
 
     Usage:
         @require_admin
@@ -58,7 +60,7 @@ def require_admin(func: Callable) -> Callable:
 
 def require_user(func: Callable) -> Callable:
     """
-    Decorator to require authenticated user (any role).
+    Require authenticated user (any role).
 
     Usage:
         @require_user

@@ -15,7 +15,7 @@ from ...core.agents.models import (
     AgentRegistration,
     AgentResponse,
     AgentStatus,
-    AgentTask,
+    AgentTaskResponse,
     AgentType,
     AgentUpdate,
 )
@@ -154,6 +154,36 @@ async def search_agents(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to search agents",
         )
+
+
+@router.get("/types", response_model=List[str])
+async def get_agent_types() -> List[str]:
+    """
+    Get available agent types.
+
+    Returns all supported agent types in the system.
+    """
+    return [agent_type.value for agent_type in AgentType]
+
+
+@router.get("/capabilities", response_model=List[str])
+async def get_agent_capabilities() -> List[str]:
+    """
+    Get available agent capabilities.
+
+    Returns all supported agent capabilities in the system.
+    """
+    return [capability.value for capability in AgentCapability]
+
+
+@router.get("/statuses", response_model=List[str])
+async def get_agent_statuses() -> List[str]:
+    """
+    Get available agent statuses.
+
+    Returns all supported agent statuses in the system.
+    """
+    return [status.value for status in AgentStatus]
 
 
 @router.get("/{agent_id}", response_model=AgentResponse)
@@ -361,10 +391,10 @@ async def delete_agent(
         )
 
 
-@router.get("/{agent_id}/tasks")
+@router.get("/{agent_id}/tasks", response_model=List[AgentTaskResponse])
 async def get_agent_tasks(
     agent_id: UUID, agent_service: AgentService = Depends(get_agent_service)
-) -> List[AgentTask]:
+) -> List[AgentTaskResponse]:
     """
     Get tasks for a specific agent.
 
@@ -379,7 +409,7 @@ async def get_agent_tasks(
         )
 
 
-@router.get("/{agent_id}/tasks/history")
+@router.get("/{agent_id}/tasks/history", response_model=List[AgentTaskResponse])
 async def get_agent_task_history(
     agent_id: UUID,
     limit: Optional[int] = Query(
@@ -387,7 +417,7 @@ async def get_agent_task_history(
     ),
     offset: Optional[int] = Query(0, ge=0, description="Number of tasks to skip"),
     agent_service: AgentService = Depends(get_agent_service),
-) -> List[AgentTask]:
+) -> List[AgentTaskResponse]:
     """
     Get task history for a specific agent.
 
@@ -440,33 +470,3 @@ async def cleanup_stale_agents(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to cleanup stale agents",
         )
-
-
-@router.get("/types", response_model=List[str])
-async def get_agent_types() -> List[str]:
-    """
-    Get available agent types.
-
-    Returns all supported agent types in the system.
-    """
-    return [agent_type.value for agent_type in AgentType]
-
-
-@router.get("/capabilities", response_model=List[str])
-async def get_agent_capabilities() -> List[str]:
-    """
-    Get available agent capabilities.
-
-    Returns all supported agent capabilities in the system.
-    """
-    return [capability.value for capability in AgentCapability]
-
-
-@router.get("/statuses", response_model=List[str])
-async def get_agent_statuses() -> List[str]:
-    """
-    Get available agent statuses.
-
-    Returns all supported agent statuses in the system.
-    """
-    return [status.value for status in AgentStatus]

@@ -27,7 +27,15 @@ chmod +x scripts/start-database.sh
 
 ### 2. Verify Connection
 ```bash
-python scripts/test-db-connection.py
+# Test connection by running a simple query
+poetry run python -c "
+from devcycle.core.database.connection import get_engine
+engine = get_engine()
+with engine.connect() as conn:
+    result = conn.execute('SELECT version();')
+    print('✅ Database connection successful!')
+    print(f'PostgreSQL version: {result.scalar()}')
+"
 ```
 
 ## Configuration
@@ -124,7 +132,15 @@ poetry run alembic downgrade -1
 
 ### 3. Test Connection
 ```bash
-python scripts/test-db-connection.py
+# Test connection by running a simple query
+poetry run python -c "
+from devcycle.core.database.connection import get_engine
+engine = get_engine()
+with engine.connect() as conn:
+    result = conn.execute('SELECT version();')
+    print('✅ Database connection successful!')
+    print(f'PostgreSQL version: {result.scalar()}')
+"
 ```
 
 ## Troubleshooting
