@@ -95,14 +95,8 @@ INSERT INTO users (
     NOW()
 ) ON CONFLICT (username) DO NOTHING;
 
--- Log the initialization
-INSERT INTO audit_logs (user_id, action, resource, details, created_at) VALUES (
-    NULL,
-    'database_initialized',
-    'system',
-    'DevCycle database initialized with default roles, permissions, and users',
-    NOW()
-);
+-- Database initialization complete
+-- System uses structlog for logging instead of database audit logs
 
 -- Grant necessary permissions to the postgres user for development
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO postgres;

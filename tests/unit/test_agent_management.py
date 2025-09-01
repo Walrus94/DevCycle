@@ -241,15 +241,13 @@ class TestAgentService:
         )
 
         # Mock the repository create method
-        mock_repository = AsyncMock()
-        mock_repository.create.return_value = mock_agent
-        agent_service.repository = mock_repository
+        mock_agent_repository.create.return_value = mock_agent
 
         result = await agent_service.register_agent(sample_registration)
 
         assert result is not None
         mock_agent_repository.get_by_name.assert_called_once_with("test_agent")
-        mock_repository.create.assert_called_once()
+        mock_agent_repository.create.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_register_agent_duplicate_name(

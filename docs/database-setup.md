@@ -88,24 +88,24 @@ The application uses the `DB_` prefixed variables:
 
 ## Database Schema
 
-The initial database schema includes:
+The unified database schema includes:
 
 ### Tables
-- `users`: User accounts and profiles
-- `roles`: User roles (admin, user, moderator)
-- `permissions`: System permissions
-- `user_roles`: User-role associations
-- `role_permissions`: Role-permission associations
-- `user_permissions`: Direct user permissions
-- `audit_logs`: System audit trail
+- `user`: User accounts and profiles (FastAPI Users)
+- `agents`: Agent management and health tracking
+- `agent_tasks`: Agent task execution and results
+- System uses structlog for logging instead of database audit logs
+
+### Architecture
+- **FastAPI Users**: Handles user authentication, registration, and management
+- **Repository Pattern**: Custom repositories for agent and task management
+- **Unified Base Model**: All models extend a common base for consistency
 
 ### Default Data
-- **Admin Role**: Full system access
-- **User Role**: Basic user access
-- **Moderator Role**: Content moderation access
 - **Default Users**:
-  - `admin/admin123` (admin role)
-  - `user/user123` (user role)
+  - `admin@devcycle.dev/admin123` (superuser)
+  - `user@devcycle.dev/user123` (regular user)
+- **User Roles**: Managed through FastAPI Users (is_superuser, is_active, is_verified)
 
 ## Development Workflow
 

@@ -38,34 +38,7 @@ def upgrade() -> None:
     op.create_index(op.f("ix_user_id"), "user", ["id"], unique=True)
     op.create_index(op.f("ix_user_role"), "user", ["role"], unique=False)
 
-    # Create audit_logs table (non-auth related)
-    op.create_table(
-        "audit_logs",
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=True),
-        sa.Column("action", sa.String(length=100), nullable=False),
-        sa.Column("resource", sa.String(length=100), nullable=False),
-        sa.Column("resource_id", sa.String(length=100), nullable=True),
-        sa.Column("details", sa.Text(), nullable=True),
-        sa.Column(
-            "created_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.text("now()"),
-            nullable=False,
-        ),
-        sa.PrimaryKeyConstraint("id"),
-    )
-
-    # Create indexes for audit_logs table
-    op.create_index(
-        op.f("ix_audit_logs_action"), "audit_logs", ["action"], unique=False
-    )
-    op.create_index(
-        op.f("ix_audit_logs_resource"), "audit_logs", ["resource"], unique=False
-    )
-    op.create_index(
-        op.f("ix_audit_logs_user_id"), "audit_logs", ["user_id"], unique=False
-    )
+    # Audit logs removed - system uses structlog for logging instead of DB audit logs
 
     # Create agents table
     op.create_table(
@@ -155,5 +128,4 @@ def downgrade() -> None:
     # Drop tables in reverse order
     op.drop_table("agent_tasks")
     op.drop_table("agents")
-    op.drop_table("audit_logs")
     op.drop_table("user")

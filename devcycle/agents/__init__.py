@@ -5,6 +5,14 @@ This module contains the base agent framework and specialized agents for
 different development lifecycle stages.
 """
 
+from ..core.agents.lifecycle import (
+    AgentExecutionState,
+    AgentLifecycleEvent,
+    AgentLifecycleManager,
+    AgentLifecycleService,
+    AgentLifecycleState,
+    AgentStateTransition,
+)
 from .base import AgentResult, AgentStatus, BaseAgent
 from .business_analyst import BusinessAnalystAgent
 
@@ -18,6 +26,12 @@ __all__ = [
     "AgentResult",
     "AgentStatus",
     "BusinessAnalystAgent",
+    "AgentLifecycleManager",
+    "AgentLifecycleService",
+    "AgentLifecycleState",
+    "AgentExecutionState",
+    "AgentStateTransition",
+    "AgentLifecycleEvent",
     # "RequirementsAgent",
     # "CodeGenerationAgent",
     # "TestingAgent",

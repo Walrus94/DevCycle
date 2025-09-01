@@ -80,9 +80,11 @@ def run_migrations_online() -> None:
     """
     # Use our database engine configuration
     try:
-        from devcycle.core.database.connection import get_engine
+        from devcycle.core.database.connection import get_async_engine
 
-        connectable = get_engine()
+        # Create a sync engine for Alembic (Alembic doesn't support async yet)
+        async_engine = get_async_engine()
+        connectable = async_engine.sync_engine
     except Exception:
         # Fallback to alembic.ini configuration
         connectable = engine_from_config(

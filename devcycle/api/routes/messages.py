@@ -4,12 +4,14 @@ Message handling endpoints for the DevCycle API.
 This module provides endpoints for message routing and handling between agents.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from ...core.auth.fastapi_users import current_active_user
+from ...core.auth.models import User
 from ...core.dependencies import get_agent_availability_service, get_message_validator
 from ...core.messaging.middleware import MessageValidator
 from ...core.messaging.responses import (
@@ -47,6 +49,7 @@ async def send_message(
     availability_service: AgentAvailabilityService = Depends(
         get_agent_availability_service
     ),
+    user: User = Depends(current_active_user),
 ) -> MessageResponse:
     """
     Send a message to a specific agent.
@@ -72,7 +75,7 @@ async def send_message(
         agent_id=request.agent_id,
         action=request.action,
         status=MessageStatus.PENDING,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
         data=request.data,
         priority=request.priority,
         ttl=request.ttl,
@@ -115,7 +118,7 @@ async def broadcast_message(
         failed_sends=0,
         skipped_agents=0,
         message_ids=message_ids,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
 
 
@@ -180,7 +183,7 @@ async def route_message(
         agent_capabilities=agent_capabilities,
         agent_load=agent_load,
         routing_reason="Agent selected based on capabilities and load balancing",
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
 
 
@@ -209,8 +212,8 @@ async def get_message_history(
                 action="analyze_business_requirement",
                 message_type=MessageType.COMMAND,
                 status=MessageStatus.COMPLETED,
-                created_at=datetime.utcnow(),
-                completed_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
+                completed_at=datetime.now(timezone.utc),
                 execution_time_ms=1500,
                 data_size_bytes=1024,
                 priority="normal",
@@ -236,9 +239,9 @@ async def get_message_detail(message_id: str) -> MessageDetailResponse:
         action="analyze_business_requirement",
         message_type=MessageType.COMMAND,
         status=MessageStatus.COMPLETED,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
-        completed_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+        completed_at=datetime.now(timezone.utc),
         execution_time_ms=1500,
         data={"requirement": "Sample business requirement"},
         data_size_bytes=1024,
@@ -248,7 +251,7 @@ async def get_message_detail(message_id: str) -> MessageDetailResponse:
         retry_count=0,
         max_retries=3,
         queue_position=None,
-        processing_started_at=datetime.utcnow(),
+        processing_started_at=datetime.now(timezone.utc),
     )
 
 
@@ -275,8 +278,8 @@ async def get_agent_messages(
                 action="analyze_business_requirement",
                 message_type=MessageType.COMMAND,
                 status=MessageStatus.COMPLETED,
-                created_at=datetime.utcnow(),
-                completed_at=datetime.utcnow(),
+                created_at=datetime.now(timezone.utc),
+                completed_at=datetime.now(timezone.utc),
                 execution_time_ms=1500,
                 data_size_bytes=1024,
                 priority="normal",
@@ -306,7 +309,7 @@ async def get_queue_status() -> QueueStatusResponse:
         retry_messages=10,
         average_processing_time_ms=1200,
         queue_health="healthy",
-        last_activity=datetime.utcnow(),
+        last_activity=datetime.now(timezone.utc),
         metrics={
             "throughput_messages_per_minute": 45,
             "error_rate_percent": 6.7,
@@ -332,7 +335,7 @@ async def retry_message(message_id: str) -> MessageRetryResponse:
         retry_delay_seconds=30,
         original_error="Connection timeout",
         retry_reason="Message failed due to network issues",
-        scheduled_at=datetime.utcnow(),
+        scheduled_at=datetime.now(timezone.utc),
         status=MessageStatus.RETRYING,
     )
 
@@ -352,7 +355,7 @@ async def cancel_message(message_id: str) -> MessageCancelResponse:
         cancelled=True,
         previous_status=MessageStatus.PENDING,
         cancellation_reason="User requested cancellation",
-        cancelled_at=datetime.utcnow(),
+        cancelled_at=datetime.now(timezone.utc),
     )
 
 
@@ -383,5 +386,5 @@ async def check_agent_availability(
         last_heartbeat=load_info.get("last_heartbeat"),
         response_time_ms=load_info.get("response_time_ms"),
         unavailable_reason=None if is_available else "Agent is offline or busy",
-        checked_at=datetime.utcnow(),
+        checked_at=datetime.now(timezone.utc),
     )
