@@ -263,11 +263,12 @@ def _setup_routes(app: FastAPI) -> None:
         prefix="/api/v1/auth/jwt",
         tags=["auth"],
     )
-    app.include_router(
-        fastapi_users.get_register_router(schemas.BaseUserCreate, schemas.BaseUser),
-        prefix="/api/v1/auth",
-        tags=["auth"],
-    )
+    # Registration disabled - users must be created by admin
+    # app.include_router(
+    #     fastapi_users.get_register_router(schemas.BaseUserCreate, schemas.BaseUser),
+    #     prefix="/api/v1/auth",
+    #     tags=["auth"],
+    # )
     app.include_router(
         fastapi_users.get_users_router(schemas.BaseUser, schemas.BaseUserUpdate),
         prefix="/api/v1/auth",

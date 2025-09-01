@@ -10,6 +10,7 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from .agents.lifecycle import AgentLifecycleService
 from .auth.fastapi_users import current_active_user
 from .auth.models import User
 from .database.connection import get_async_session
@@ -62,21 +63,33 @@ async def get_agent_task_repository(
 # UserService removed - using FastAPI Users directly
 
 
+async def get_lifecycle_service() -> AgentLifecycleService:
+    """
+    Get agent lifecycle service dependency.
+
+    Returns:
+        AgentLifecycleService instance
+    """
+    return AgentLifecycleService()
+
+
 async def get_agent_service(
     agent_repository: AgentRepository = Depends(get_agent_repository),
     agent_task_repository: AgentTaskRepository = Depends(get_agent_task_repository),
+    lifecycle_service: AgentLifecycleService = Depends(get_lifecycle_service),
 ) -> AgentService:
     """
-    Get agent service dependency.
+    Get agent service dependency with lifecycle integration.
 
     Args:
         agent_repository: Agent repository instance
         agent_task_repository: Agent task repository instance
+        lifecycle_service: Lifecycle service instance
 
     Returns:
         AgentService instance
     """
-    return AgentService(agent_repository, agent_task_repository)
+    return AgentService(agent_repository, agent_task_repository, lifecycle_service)
 
 
 async def get_current_user_id(user: User = Depends(current_active_user)) -> UUID:

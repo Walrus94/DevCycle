@@ -470,3 +470,254 @@ async def cleanup_stale_agents(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to cleanup stale agents",
         )
+
+
+# Lifecycle Management Endpoints
+
+
+@router.get("/{agent_id}/lifecycle", response_model=Dict[str, Any])
+async def get_agent_lifecycle_status(
+    agent_id: UUID, agent_service: AgentService = Depends(get_agent_service)
+) -> Dict[str, Any]:
+    """
+    Get agent lifecycle status.
+
+    Returns detailed lifecycle information for the specified agent.
+    """
+    try:
+        lifecycle_status = agent_service.get_agent_lifecycle_status(agent_id)
+        if not lifecycle_status:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found"
+            )
+        return lifecycle_status
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve agent lifecycle status",
+        )
+
+
+@router.get("/lifecycle/statuses", response_model=Dict[str, Dict[str, Any]])
+async def get_all_agent_lifecycle_statuses(
+    agent_service: AgentService = Depends(get_agent_service),
+) -> Dict[str, Dict[str, Any]]:
+    """
+    Get all agent lifecycle statuses.
+
+    Returns lifecycle information for all agents in the system.
+    """
+    try:
+        statuses = agent_service.get_all_agent_lifecycle_statuses()
+        # Convert UUID keys to strings for JSON serialization
+        return {str(agent_id): status for agent_id, status in statuses.items()}
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve agent lifecycle statuses",
+        )
+
+
+@router.post("/{agent_id}/lifecycle/start", response_model=AgentResponse)
+async def start_agent_lifecycle(
+    agent_id: UUID, agent_service: AgentService = Depends(get_agent_service)
+) -> AgentResponse:
+    """
+    Start an agent through lifecycle management.
+
+    Transitions agent to ONLINE state and makes it available for tasks.
+    """
+    try:
+        agent = await agent_service.start_agent(agent_id)
+        if not agent:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found"
+            )
+        return agent
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to start agent",
+        )
+
+
+@router.post("/{agent_id}/lifecycle/stop", response_model=AgentResponse)
+async def stop_agent_lifecycle(
+    agent_id: UUID, agent_service: AgentService = Depends(get_agent_service)
+) -> AgentResponse:
+    """
+    Stop an agent through lifecycle management.
+
+    Transitions agent to OFFLINE state and stops task processing.
+    """
+    try:
+        agent = await agent_service.stop_agent(agent_id)
+        if not agent:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found"
+            )
+        return agent
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to stop agent",
+        )
+
+
+@router.post("/{agent_id}/lifecycle/deploy", response_model=AgentResponse)
+async def deploy_agent_lifecycle(
+    agent_id: UUID, agent_service: AgentService = Depends(get_agent_service)
+) -> AgentResponse:
+    """
+    Deploy an agent through lifecycle management.
+
+    Transitions agent to DEPLOYED state.
+    """
+    try:
+        agent = await agent_service.deploy_agent(agent_id)
+        if not agent:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found"
+            )
+        return agent
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to deploy agent",
+        )
+
+
+@router.post("/{agent_id}/lifecycle/maintenance", response_model=AgentResponse)
+async def put_agent_in_maintenance(
+    agent_id: UUID,
+    reason: str = "Scheduled maintenance",
+    agent_service: AgentService = Depends(get_agent_service),
+) -> AgentResponse:
+    """
+    Put agent in maintenance mode.
+
+    Transitions agent to MAINTENANCE state for scheduled maintenance.
+    """
+    try:
+        agent = await agent_service.put_agent_in_maintenance(agent_id, reason)
+        if not agent:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found"
+            )
+        return agent
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to put agent in maintenance mode",
+        )
+
+
+@router.post("/{agent_id}/lifecycle/resume", response_model=AgentResponse)
+async def resume_agent_from_maintenance(
+    agent_id: UUID, agent_service: AgentService = Depends(get_agent_service)
+) -> AgentResponse:
+    """
+    Resume agent from maintenance mode.
+
+    Transitions agent from MAINTENANCE to ONLINE state.
+    """
+    try:
+        agent = await agent_service.resume_agent_from_maintenance(agent_id)
+        if not agent:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found"
+            )
+        return agent
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to resume agent from maintenance",
+        )
+
+
+@router.get("/lifecycle/operational", response_model=List[str])
+async def get_operational_agents(
+    agent_service: AgentService = Depends(get_agent_service),
+) -> List[str]:
+    """
+    Get list of operational agents.
+
+    Returns agent IDs that are currently operational (ONLINE, BUSY, or IDLE).
+    """
+    try:
+        operational_agents = agent_service.get_operational_agents()
+        return [str(agent_id) for agent_id in operational_agents]
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve operational agents",
+        )
+
+
+@router.get("/lifecycle/available", response_model=List[str])
+async def get_available_agent_ids(
+    agent_service: AgentService = Depends(get_agent_service),
+) -> List[str]:
+    """
+    Get list of agents available for tasks.
+
+    Returns agent IDs that are available for new task assignments.
+    """
+    try:
+        available_agents = agent_service.get_available_agent_ids()
+        return [str(agent_id) for agent_id in available_agents]
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve available agents",
+        )
+
+
+@router.get("/lifecycle/errors", response_model=List[str])
+async def get_agents_in_error(
+    agent_service: AgentService = Depends(get_agent_service),
+) -> List[str]:
+    """
+    Get list of agents in error state.
+
+    Returns agent IDs that are currently in an error state.
+    """
+    try:
+        error_agents = agent_service.get_agents_in_error()
+        return [str(agent_id) for agent_id in error_agents]
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve agents in error",
+        )
+
+
+@router.get("/lifecycle/maintenance", response_model=List[str])
+async def get_agents_in_maintenance(
+    agent_service: AgentService = Depends(get_agent_service),
+) -> List[str]:
+    """
+    Get list of agents in maintenance.
+
+    Returns agent IDs that are currently in maintenance mode.
+    """
+    try:
+        maintenance_agents = agent_service.get_agents_in_maintenance()
+        return [str(agent_id) for agent_id in maintenance_agents]
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve agents in maintenance",
+        )

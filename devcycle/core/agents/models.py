@@ -20,13 +20,29 @@ from ..database.models import Base
 
 
 class AgentStatus(str, Enum):
-    """Agent status enumeration."""
+    """Agent status enumeration - maps to AgentLifecycleState."""
 
+    # Core operational states
     OFFLINE = "offline"
     ONLINE = "online"
     BUSY = "busy"
+    IDLE = "idle"
     ERROR = "error"
     MAINTENANCE = "maintenance"
+
+    # Lifecycle states
+    REGISTERED = "registered"
+    DEPLOYING = "deploying"
+    DEPLOYED = "deployed"
+    STARTING = "starting"
+    STOPPING = "stopping"
+    UPDATING = "updating"
+    SCALING = "scaling"
+    FAILED = "failed"
+    TIMEOUT = "timeout"
+    SUSPENDED = "suspended"
+    TERMINATED = "terminated"
+    DELETED = "deleted"
 
 
 class AgentType(str, Enum):
@@ -156,6 +172,28 @@ class AgentTaskResponse(BaseModel):
     updated_at: datetime
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+
+
+class AgentLifecycleState(BaseModel):
+    """Agent lifecycle state model."""
+
+    state: AgentStatus
+    timestamp: datetime
+    reason: str
+    triggered_by: str
+    metadata: Dict[str, Any] = {}
+
+
+class AgentLifecycleHistory(BaseModel):
+    """Agent lifecycle history model."""
+
+    agent_id: UUID
+    states: List[AgentLifecycleState]
+    current_state: AgentStatus
+    is_operational: bool
+    is_available_for_tasks: bool
+    is_in_error_state: bool
+    is_in_maintenance: bool
 
     model_config = ConfigDict(from_attributes=True)
 

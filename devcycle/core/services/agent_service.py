@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
+from ..agents.lifecycle import AgentLifecycleService, AgentLifecycleState
 from ..agents.models import (
     Agent,
     AgentCapability,
@@ -32,12 +33,73 @@ class AgentService(BaseService[Agent]):
     """Service for agent management operations."""
 
     def __init__(
-        self, agent_repository: AgentRepository, task_repository: AgentTaskRepository
+        self,
+        agent_repository: AgentRepository,
+        task_repository: AgentTaskRepository,
+        lifecycle_service: Optional[AgentLifecycleService] = None,
     ):
         """Initialize agent service."""
         super().__init__(agent_repository)
         self.agent_repository = agent_repository
         self.task_repository = task_repository
+        self.lifecycle_service = lifecycle_service or AgentLifecycleService()
+
+        # Register lifecycle event handlers
+        self._register_lifecycle_handlers()
+
+    def _register_lifecycle_handlers(self) -> None:
+        """Register event handlers for lifecycle state changes."""
+        # Event handlers will be registered per agent when needed
+        # This is a placeholder for future global event handling
+        pass
+
+    async def _on_agent_state_change(
+        self, event_type: str, data: Dict[str, Any]
+    ) -> None:
+        """Handle agent state change events."""
+        agent_id = data.get("agent_id")
+        to_state = data.get("to_state")
+
+        if not agent_id:
+            return
+
+        # Update database status
+        if to_state:
+            await self.agent_repository.update_agent_status(
+                agent_id, AgentStatus(to_state.value)
+            )
+
+        # Handle specific state transitions
+        if to_state == AgentLifecycleState.ERROR:
+            await self._handle_agent_error(
+                agent_id, data.get("reason", "Unknown error")
+            )
+        elif to_state == AgentLifecycleState.OFFLINE:
+            await self._handle_agent_offline(agent_id)
+        elif to_state == AgentLifecycleState.ONLINE:
+            await self._handle_agent_online(agent_id)
+
+    async def _handle_agent_error(self, agent_id: UUID, error_reason: str) -> None:
+        """Handle agent error state."""
+        # Update error count and last error
+        await self.agent_repository.update_agent_health(
+            agent_id, AgentStatus.ERROR, error_message=error_reason
+        )
+
+    async def _handle_agent_offline(self, agent_id: UUID) -> None:
+        """Handle agent going offline."""
+        # Cancel any pending tasks
+        pending_tasks = await self.task_repository.get_tasks_by_agent(agent_id)
+        for task in pending_tasks:
+            if task.status in ["pending", "running"]:
+                await self.task_repository.update_task_status(
+                    task.id, "cancelled", error="Agent went offline"
+                )
+
+    async def _handle_agent_online(self, agent_id: UUID) -> None:
+        """Handle agent coming online."""
+        # Agent is now available for new tasks
+        pass
 
     async def register_agent(self, registration: AgentRegistration) -> AgentResponse:
         """Register a new agent with business logic validation."""
@@ -71,6 +133,13 @@ class AgentService(BaseService[Agent]):
 
         # Create agent through repository
         agent = await self.repository.create(**agent_data)
+
+        # Register with lifecycle service
+        await self.lifecycle_service.register_agent(agent.id)
+
+        # Register event handlers for this agent
+        manager = self.lifecycle_service.get_manager(agent.id)
+        manager.on_event("post_transition", self._on_agent_state_change)
 
         # Convert to response model
         return await self._to_agent_response(agent)
@@ -355,12 +424,39 @@ class AgentService(BaseService[Agent]):
         """Convert Agent model to AgentResponse."""
         # Parse JSON fields
         try:
-            capabilities = json.loads(agent.capabilities) if agent.capabilities else []
-            configuration = (
-                json.loads(agent.configuration) if agent.configuration else {}
-            )
-            metadata = json.loads(agent.metadata_json) if agent.metadata_json else {}
-        except json.JSONDecodeError:
+            # Handle capabilities - could be JSON string or already a list
+            if agent.capabilities:
+                if isinstance(agent.capabilities, str):
+                    capabilities = json.loads(agent.capabilities)
+                elif isinstance(agent.capabilities, list):
+                    capabilities = agent.capabilities
+                else:
+                    capabilities = []
+            else:
+                capabilities = []
+
+            # Handle configuration - should be JSON string
+            if agent.configuration:
+                if isinstance(agent.configuration, str):
+                    configuration = json.loads(agent.configuration)
+                elif isinstance(agent.configuration, dict):
+                    configuration = agent.configuration
+                else:
+                    configuration = {}
+            else:
+                configuration = {}
+
+            # Handle metadata - should be JSON string
+            if agent.metadata_json:
+                if isinstance(agent.metadata_json, str):
+                    metadata = json.loads(agent.metadata_json)
+                elif isinstance(agent.metadata_json, dict):
+                    metadata = agent.metadata_json
+                else:
+                    metadata = {}
+            else:
+                metadata = {}
+        except (json.JSONDecodeError, TypeError):
             capabilities = []
             configuration = {}
             metadata = {}
@@ -417,3 +513,104 @@ class AgentService(BaseService[Agent]):
             started_at=task.started_at,
             completed_at=task.completed_at,
         )
+
+    # Lifecycle Management Methods
+
+    async def start_agent(self, agent_id: UUID) -> Optional[AgentResponse]:
+        """Start an agent with lifecycle management."""
+        # Check if agent exists
+        agent = await self.repository.get_by_id(agent_id)
+        if not agent:
+            return None
+
+        # Start through lifecycle service
+        success = await self.lifecycle_service.start_agent(agent_id)
+        if not success:
+            return None
+
+        # Update database status
+        await self.agent_repository.update_agent_status(agent_id, AgentStatus.ONLINE)
+
+        return await self._to_agent_response(agent)
+
+    async def stop_agent(self, agent_id: UUID) -> Optional[AgentResponse]:
+        """Stop an agent with lifecycle management."""
+        # Stop through lifecycle service
+        success = await self.lifecycle_service.stop_agent(agent_id)
+        if not success:
+            return None
+
+        # Update database status
+        await self.agent_repository.update_agent_status(agent_id, AgentStatus.OFFLINE)
+
+        agent = await self.repository.get_by_id(agent_id)
+        return await self._to_agent_response(agent) if agent else None
+
+    async def deploy_agent(self, agent_id: UUID) -> Optional[AgentResponse]:
+        """Deploy an agent with lifecycle management."""
+        # Deploy through lifecycle service
+        success = await self.lifecycle_service.deploy_agent(agent_id)
+        if not success:
+            return None
+
+        # Update database status
+        await self.agent_repository.update_agent_status(agent_id, AgentStatus.DEPLOYED)
+
+        agent = await self.repository.get_by_id(agent_id)
+        return await self._to_agent_response(agent) if agent else None
+
+    async def put_agent_in_maintenance(
+        self, agent_id: UUID, reason: str = "Scheduled maintenance"
+    ) -> Optional[AgentResponse]:
+        """Put agent in maintenance mode."""
+        # Put in maintenance through lifecycle service
+        success = await self.lifecycle_service.put_in_maintenance(agent_id, reason)
+        if not success:
+            return None
+
+        # Update database status
+        await self.agent_repository.update_agent_status(
+            agent_id, AgentStatus.MAINTENANCE
+        )
+
+        agent = await self.repository.get_by_id(agent_id)
+        return await self._to_agent_response(agent) if agent else None
+
+    async def resume_agent_from_maintenance(
+        self, agent_id: UUID
+    ) -> Optional[AgentResponse]:
+        """Resume agent from maintenance mode."""
+        # Resume from maintenance through lifecycle service
+        success = await self.lifecycle_service.resume_from_maintenance(agent_id)
+        if not success:
+            return None
+
+        # Update database status
+        await self.agent_repository.update_agent_status(agent_id, AgentStatus.ONLINE)
+
+        agent = await self.repository.get_by_id(agent_id)
+        return await self._to_agent_response(agent) if agent else None
+
+    def get_agent_lifecycle_status(self, agent_id: UUID) -> Optional[Dict[str, Any]]:
+        """Get agent lifecycle status."""
+        return self.lifecycle_service.get_agent_status(agent_id)
+
+    def get_all_agent_lifecycle_statuses(self) -> Dict[UUID, Dict[str, Any]]:
+        """Get all agent lifecycle statuses."""
+        return self.lifecycle_service.get_all_agent_statuses()
+
+    def get_operational_agents(self) -> List[UUID]:
+        """Get list of operational agents."""
+        return self.lifecycle_service.get_operational_agents()
+
+    def get_available_agent_ids(self) -> List[UUID]:
+        """Get list of agents available for tasks."""
+        return self.lifecycle_service.get_available_agents()
+
+    def get_agents_in_error(self) -> List[UUID]:
+        """Get list of agents in error state."""
+        return self.lifecycle_service.get_agents_in_error()
+
+    def get_agents_in_maintenance(self) -> List[UUID]:
+        """Get list of agents in maintenance."""
+        return self.lifecycle_service.get_agents_in_maintenance()
