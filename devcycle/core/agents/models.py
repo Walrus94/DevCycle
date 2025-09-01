@@ -11,9 +11,9 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Boolean, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from ..database.models import Base
@@ -204,6 +204,11 @@ class Agent(Base):
         DateTime(timezone=True), nullable=True
     )
 
+    # Relationships
+    tasks: Mapped[List["AgentTask"]] = relationship(
+        "AgentTask", back_populates="agent", cascade="all, delete-orphan"
+    )
+
     def __repr__(self) -> str:
         return f"<Agent(id={self.id}, name='{self.name}', type='{self.agent_type}')>"
 
@@ -217,7 +222,7 @@ class AgentTask(Base):
         PG_UUID(as_uuid=True), primary_key=True, default=uuid4
     )
     agent_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=False, index=True
+        PG_UUID(as_uuid=True), ForeignKey("agents.id"), nullable=False, index=True
     )
     task_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
@@ -241,6 +246,9 @@ class AgentTask(Base):
     completed_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+
+    # Relationships
+    agent: Mapped["Agent"] = relationship("Agent", back_populates="tasks")
 
     def __repr__(self) -> str:
         return (

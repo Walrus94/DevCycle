@@ -8,12 +8,9 @@ ensuring that messages are only sent to agents that can process them.
 import asyncio
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from ..agents.models import AgentStatus
-from ..database.connection import _get_async_session_local
 from ..logging import get_logger
+from ..repositories.agent_repository import AgentRepository
 
 logger = get_logger(__name__)
 
@@ -21,8 +18,9 @@ logger = get_logger(__name__)
 class AgentAvailabilityService:
     """Service for checking agent availability and capabilities."""
 
-    def __init__(self) -> None:
+    def __init__(self, agent_repository: AgentRepository) -> None:
         """Initialize the agent availability service."""
+        self.agent_repository = agent_repository
         self._cache: Dict[str, Dict[str, Any]] = {}
         self._cache_ttl = 30  # 30 seconds cache TTL
         self._last_cache_update = 0
@@ -43,34 +41,32 @@ class AgentAvailabilityService:
                 cached_data = self._cache.get(agent_id, {})
                 return bool(cached_data.get("available", False))
 
-            # Get fresh data from database
-            session_local = _get_async_session_local()
-            async with session_local() as session:
-                agent = await self._get_agent_by_id(session, agent_id)
+            # Get fresh data from repository
+            agent = await self.agent_repository.get_by_name(agent_id)
 
-                if not agent:
-                    logger.warning(f"Agent {agent_id} not found")
-                    return False
+            if not agent:
+                logger.warning(f"Agent {agent_id} not found")
+                return False
 
-                # Check if agent is online and not busy
-                is_available = (
-                    agent.status == AgentStatus.ONLINE
-                    and not self._is_agent_busy(agent)
-                    and not self._is_agent_in_maintenance(agent)
-                )
+            # Check if agent is online and not busy
+            is_available = (
+                agent.status == AgentStatus.ONLINE.value
+                and not self._is_agent_busy(agent)
+                and not self._is_agent_in_maintenance(agent)
+            )
 
-                # Update cache
-                self._update_cache(
-                    agent_id,
-                    {
-                        "available": is_available,
-                        "status": agent.status,
-                        "capabilities": agent.capabilities,
-                        "last_check": asyncio.get_event_loop().time(),
-                    },
-                )
+            # Update cache
+            self._update_cache(
+                agent_id,
+                {
+                    "available": is_available,
+                    "status": agent.status,
+                    "capabilities": agent.capabilities,
+                    "last_check": asyncio.get_event_loop().time(),
+                },
+            )
 
-                return is_available
+            return is_available
 
         except Exception as e:
             logger.error(f"Error checking agent availability for {agent_id}: {e}")
@@ -93,31 +89,33 @@ class AgentAvailabilityService:
                 capabilities = cached_data.get("capabilities", [])
                 return capabilities if isinstance(capabilities, list) else []
 
-            # Get fresh data from database
-            session_local = _get_async_session_local()
-            async with session_local() as session:
-                agent = await self._get_agent_by_id(session, agent_id)
+            # Get fresh data from repository
+            agent = await self.agent_repository.get_by_name(agent_id)
 
-                if not agent:
-                    logger.warning(f"Agent {agent_id} not found")
-                    return []
+            if not agent:
+                logger.warning(f"Agent {agent_id} not found")
+                return []
 
-                capabilities = (
-                    [cap.value for cap in agent.capabilities]
-                    if agent.capabilities
-                    else []
+            # Parse capabilities from JSON string
+            import json
+
+            try:
+                parsed_capabilities: list[str] = (
+                    json.loads(agent.capabilities) if agent.capabilities else []
                 )
+            except json.JSONDecodeError:
+                parsed_capabilities = []
 
-                # Update cache
-                self._update_cache(
-                    agent_id,
-                    {
-                        "capabilities": capabilities,
-                        "last_check": asyncio.get_event_loop().time(),
-                    },
-                )
+            # Update cache
+            self._update_cache(
+                agent_id,
+                {
+                    "capabilities": parsed_capabilities,
+                    "last_check": asyncio.get_event_loop().time(),
+                },
+            )
 
-                return capabilities
+            return parsed_capabilities
 
         except Exception as e:
             logger.error(f"Error getting agent capabilities for {agent_id}: {e}")
@@ -153,25 +151,20 @@ class AgentAvailabilityService:
             List of available agent IDs
         """
         try:
-            session_local = _get_async_session_local()
-            async with session_local() as session:
-                # Query for agents with the specified capability and online status
-                from ..agents.models import Agent
+            # Get agents with the specified capability
+            agents = await self.agent_repository.get_agents_by_capability(capability)
 
-                query = select(Agent).where(Agent.status == AgentStatus.ONLINE)
+            # Filter for online and available agents
+            available_agents = []
+            for agent in agents:
+                if (
+                    agent.status == AgentStatus.ONLINE.value
+                    and not self._is_agent_busy(agent)
+                    and not self._is_agent_in_maintenance(agent)
+                ):
+                    available_agents.append(str(agent.id))
 
-                result = await session.execute(query)
-                agents = result.scalars().all()
-
-                # Filter out busy agents
-                available_agents = []
-                for agent in agents:
-                    if not self._is_agent_busy(
-                        agent
-                    ) and not self._is_agent_in_maintenance(agent):
-                        available_agents.append(agent.id)
-
-                return available_agents
+            return available_agents
 
         except Exception as e:
             logger.error(
@@ -190,32 +183,33 @@ class AgentAvailabilityService:
             Dictionary containing load information
         """
         try:
-            session_local = _get_async_session_local()
-            async with session_local() as session:
-                agent = await self._get_agent_by_id(session, agent_id)
+            agent = await self.agent_repository.get_by_name(agent_id)
 
-                if not agent:
-                    return {"error": "Agent not found"}
+            if not agent:
+                return {"error": "Agent not found"}
 
-                return {
-                    "agent_id": agent_id,
-                    "status": agent.status,
-                    "current_tasks": agent.current_tasks or 0,
-                    "max_concurrent_tasks": agent.configuration.max_concurrent_tasks
-                    if agent.configuration
-                    else 1,
-                    "available_slots": max(
-                        0,
-                        (
-                            agent.configuration.max_concurrent_tasks
-                            if agent.configuration
-                            else 1
-                        )
-                        - (agent.current_tasks or 0),
-                    ),
-                    "last_heartbeat": agent.last_heartbeat,
-                    "response_time_ms": agent.response_time_ms,
-                }
+            # Parse configuration from JSON
+            import json
+
+            try:
+                configuration = (
+                    json.loads(agent.configuration) if agent.configuration else {}
+                )
+            except json.JSONDecodeError:
+                configuration = {}
+
+            max_concurrent_tasks = configuration.get("max_concurrent_tasks", 1)
+            current_tasks = getattr(agent, "current_tasks", 0) or 0
+
+            return {
+                "agent_id": agent_id,
+                "status": agent.status,
+                "current_tasks": current_tasks,
+                "max_concurrent_tasks": max_concurrent_tasks,
+                "available_slots": max(0, max_concurrent_tasks - current_tasks),
+                "last_heartbeat": agent.last_heartbeat,
+                "response_time_ms": agent.response_time_ms,
+            }
 
         except Exception as e:
             logger.error(f"Error getting agent load for {agent_id}: {e}")
@@ -232,36 +226,34 @@ class AgentAvailabilityService:
             Agent ID of the least busy agent, or None if no suitable agent found
         """
         try:
-            session_local = _get_async_session_local()
-            async with session_local() as session:  # noqa: F841
-                # Get all agents with the required capabilities
-                available_agents = await self.get_available_agents_by_capability(
-                    capabilities[0]
-                )
+            # Get all agents with the required capabilities
+            available_agents = await self.get_available_agents_by_capability(
+                capabilities[0]
+            )
 
-                if not available_agents:
-                    return None
+            if not available_agents:
+                return None
 
-                # Get load information for all available agents
-                agent_loads = []
-                for agent_id in available_agents:
-                    load_info = await self.get_agent_load(agent_id)
-                    if "error" not in load_info:
-                        agent_loads.append((agent_id, load_info))
+            # Get load information for all available agents
+            agent_loads = []
+            for agent_id in available_agents:
+                load_info = await self.get_agent_load(agent_id)
+                if "error" not in load_info:
+                    agent_loads.append((agent_id, load_info))
 
-                if not agent_loads:
-                    return None
+            if not agent_loads:
+                return None
 
-                # Sort by available slots (descending) and response time (ascending)
-                agent_loads.sort(
-                    key=lambda x: (
-                        x[1]["available_slots"],
-                        -x[1].get("response_time_ms", 0),
-                    ),
-                    reverse=True,
-                )
+            # Sort by available slots (descending) and response time (ascending)
+            agent_loads.sort(
+                key=lambda x: (
+                    x[1]["available_slots"],
+                    -x[1].get("response_time_ms", 0),
+                ),
+                reverse=True,
+            )
 
-                return agent_loads[0][0]
+            return agent_loads[0][0]
 
         except Exception as e:
             logger.error(f"Error getting least busy agent: {e}")
@@ -269,17 +261,24 @@ class AgentAvailabilityService:
 
     def _is_agent_busy(self, agent: Any) -> bool:
         """Check if an agent is busy."""
-        if not agent.configuration:
-            return False
+        # Parse configuration from JSON
+        import json
+
+        try:
+            configuration = (
+                json.loads(agent.configuration) if agent.configuration else {}
+            )
+        except json.JSONDecodeError:
+            configuration = {}
 
         current_tasks = getattr(agent, "current_tasks", 0) or 0
-        max_tasks = getattr(agent.configuration, "max_concurrent_tasks", 1) or 1
+        max_tasks = configuration.get("max_concurrent_tasks", 1)
 
         return bool(current_tasks >= max_tasks)
 
     def _is_agent_in_maintenance(self, agent: Any) -> bool:
         """Check if an agent is in maintenance mode."""
-        return bool(getattr(agent, "status", None) == AgentStatus.MAINTENANCE)
+        return bool(getattr(agent, "status", None) == AgentStatus.MAINTENANCE.value)
 
     def _is_cache_valid(self, agent_id: str) -> bool:
         """Check if cached data is still valid."""
@@ -298,15 +297,7 @@ class AgentAvailabilityService:
 
         self._cache[agent_id].update(data)
 
-    async def _get_agent_by_id(self, session: AsyncSession, agent_id: str) -> Any:
-        """Get agent by ID from database."""
-        # This is a placeholder - implement based on your actual agent model
-        # You'll need to import and use your actual Agent model
-        from ..agents.models import Agent
-
-        query = select(Agent).where(Agent.id == agent_id)
-        result = await session.execute(query)
-        return result.scalar_one_or_none()
+    # _get_agent_by_id method removed - using repository pattern instead
 
     def clear_cache(self, agent_id: Optional[str] = None) -> None:
         """

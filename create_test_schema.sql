@@ -20,22 +20,7 @@ CREATE INDEX "ix_user_email" ON "user" ("email");
 CREATE UNIQUE INDEX "ix_user_id" ON "user" ("id");
 CREATE INDEX "ix_user_role" ON "user" ("role");
 
--- Create audit_logs table (non-auth related)
-CREATE TABLE "audit_logs" (
-    "id" SERIAL NOT NULL,
-    "user_id" UUID,
-    "action" VARCHAR(100) NOT NULL,
-    "resource" VARCHAR(100) NOT NULL,
-    "resource_id" VARCHAR(100),
-    "details" TEXT,
-    "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-    PRIMARY KEY ("id")
-);
-
--- Create indexes for audit_logs table
-CREATE INDEX "ix_audit_logs_action" ON "audit_logs" ("action");
-CREATE INDEX "ix_audit_logs_resource" ON "audit_logs" ("resource");
-CREATE INDEX "ix_audit_logs_user_id" ON "audit_logs" ("user_id");
+-- Audit logs removed - system uses structlog for logging instead of database audit logs
 
 -- Create agents table
 CREATE TABLE "agents" (

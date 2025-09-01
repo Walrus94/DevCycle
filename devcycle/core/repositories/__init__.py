@@ -7,11 +7,11 @@ to separate business logic from data access concerns.
 
 from .agent_repository import AgentRepository, AgentTaskRepository
 from .base import BaseRepository
-from .user_repository import UserRepository
+
+# UserRepository removed - using FastAPI Users SQLAlchemyUserDatabase directly
 
 __all__ = [
     "BaseRepository",
-    "UserRepository",
     "AgentRepository",
     "AgentTaskRepository",
 ]

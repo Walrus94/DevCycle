@@ -18,6 +18,8 @@ DevCycle is a Proof of Concept (POC) that leverages multiple specialized AI agen
 - **Python 3.9+**
 - **AI/ML**: Hugging Face, Transformers, PyTorch
 - **Web Framework**: FastAPI, Uvicorn
+- **Database**: PostgreSQL, SQLAlchemy, Alembic
+- **Authentication**: FastAPI Users
 - **Configuration**: Pydantic, Pydantic-settings
 - **Logging**: Structlog (Kibana compatible)
 - **Development Tools**: Poetry, Black, Flake8, Pytest, MyPy
@@ -62,3 +64,25 @@ docker-compose --profile dev up -d
 # Stop services
 docker-compose down
 ```
+
+## Database Setup
+
+DevCycle uses PostgreSQL with a unified architecture combining FastAPI Users and custom repositories. See [Database Setup Guide](docs/database-setup.md) for detailed instructions.
+
+**Quick Database commands:**
+```bash
+# Start database services
+scripts/start-database.bat  # Windows
+./scripts/start-database.sh  # Linux/macOS
+
+# Run migrations
+poetry run alembic upgrade head
+
+# Test connection
+poetry run python -c "from devcycle.core.database.connection import get_engine; print('✅ Database connected!')"
+```
+
+**Architecture:**
+- **FastAPI Users**: User authentication and management
+- **Repository Pattern**: Agent and task management
+- **Unified Models**: Consistent SQLAlchemy patterns

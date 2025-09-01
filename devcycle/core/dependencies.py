@@ -16,26 +16,16 @@ from .database.connection import get_async_session
 from .messaging.middleware import MessageValidator
 from .messaging.validation import MessageValidationConfig
 from .repositories.agent_repository import AgentRepository, AgentTaskRepository
-from .repositories.user_repository import UserRepository
+
+# UserRepository removed - using FastAPI Users SQLAlchemyUserDatabase directly
 from .services.agent_availability_service import AgentAvailabilityService
 from .services.agent_service import AgentService
-from .services.user_service import UserService
+
+# UserService removed - using FastAPI Users directly
 
 
 # Repository Dependencies - Direct instantiation
-async def get_user_repository(
-    session: AsyncSession = Depends(get_async_session),
-) -> UserRepository:
-    """
-    Get user repository dependency.
-
-    Args:
-        session: Database session
-
-    Returns:
-        UserRepository instance
-    """
-    return UserRepository(session)
+# UserRepository removed - using FastAPI Users SQLAlchemyUserDatabase directly
 
 
 async def get_agent_repository(
@@ -69,19 +59,7 @@ async def get_agent_task_repository(
 
 
 # Service Dependencies - Direct instantiation with repository dependencies
-async def get_user_service(
-    user_repository: UserRepository = Depends(get_user_repository),
-) -> UserService:
-    """
-    Get user service dependency.
-
-    Args:
-        user_repository: User repository instance
-
-    Returns:
-        UserService instance
-    """
-    return UserService(user_repository)
+# UserService removed - using FastAPI Users directly
 
 
 async def get_agent_service(
@@ -151,21 +129,7 @@ async def require_superuser(user: User = Depends(current_active_user)) -> User:
     return user
 
 
-async def get_authenticated_user_service(
-    user_service: UserService = Depends(get_user_service),
-    user_id: UUID = Depends(get_current_user_id),
-) -> UserService:
-    """
-    Get user service for authenticated user.
-
-    Args:
-        user_service: User service instance
-        user_id: Current user ID
-
-    Returns:
-        UserService instance
-    """
-    return user_service
+# Authenticated user service removed - using FastAPI Users directly
 
 
 async def get_message_validator() -> MessageValidator:
@@ -179,11 +143,16 @@ async def get_message_validator() -> MessageValidator:
     return MessageValidator(config)
 
 
-async def get_agent_availability_service() -> AgentAvailabilityService:
+async def get_agent_availability_service(
+    agent_repository: AgentRepository = Depends(get_agent_repository),
+) -> AgentAvailabilityService:
     """
     Get agent availability service dependency.
+
+    Args:
+        agent_repository: Agent repository instance
 
     Returns:
         AgentAvailabilityService instance
     """
-    return AgentAvailabilityService()
+    return AgentAvailabilityService(agent_repository)

@@ -17,9 +17,11 @@ from devcycle.core.repositories.agent_repository import (
     AgentRepository,
     AgentTaskRepository,
 )
-from devcycle.core.repositories.user_repository import UserRepository
+
+# UserRepository removed - using FastAPI Users SQLAlchemyUserDatabase directly
 from devcycle.core.services.agent_service import AgentService
-from devcycle.core.services.user_service import UserService
+
+# UserService removed - using FastAPI Users directly
 
 # We'll create the app with proper configuration
 app = None
@@ -202,12 +204,7 @@ def client(async_client) -> AsyncClient:
     return async_client
 
 
-@pytest.fixture
-def mock_user_repository():
-    """Create a mock user repository for unit tests."""
-    from unittest.mock import AsyncMock
-
-    return AsyncMock(spec=UserRepository)
+# UserRepository fixture removed - using FastAPI Users SQLAlchemyUserDatabase directly
 
 
 @pytest.fixture
@@ -226,12 +223,7 @@ def mock_agent_task_repository():
     return AsyncMock(spec=AgentTaskRepository)
 
 
-@pytest.fixture
-def mock_user_service(mock_user_repository):
-    """Create a mock user service for unit tests."""
-    from unittest.mock import AsyncMock
-
-    return AsyncMock(spec=UserService)
+# UserService fixture removed - using FastAPI Users directly
 
 
 @pytest.fixture
