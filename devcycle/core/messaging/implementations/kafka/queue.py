@@ -204,10 +204,14 @@ class KafkaMessageQueue(MessageQueueInterface):
             if self._consumer:
                 self._consumer.close()
             if self._producer:
+                # confluent_kafka.Producer does not expose close();
+                # flush to ensure delivery
                 self._producer.flush()
-                self._producer.close()
-            if self._admin_client:
-                self._admin_client.close()
+            # AdminClient does not require explicit close
+            # Set references to None for GC friendliness
+            self._consumer = None
+            self._producer = None
+            self._admin_client = None
 
             # Shutdown thread pool
             self._executor.shutdown(wait=True)

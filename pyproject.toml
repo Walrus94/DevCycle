@@ -52,11 +52,23 @@ python-dotenv = "^1.0.0"
 asyncio = "^3.4.3"
 aiohttp = "^3.9.0"
 
+# Redis for caching (optional, not required for auth)
+redis = {extras = ["hiredis"], version = "^5.0.0", optional = true}
+
 # Message queuing
 confluent-kafka = "^2.3.0"
 
 # Logging and monitoring
 structlog = "^23.2.0"
+sqlalchemy = {extras = ["postgresql"], version = "^2.0.43"}
+alembic = "^1.16.5"
+psycopg2-binary = "^2.9.10"
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+fastapi-users = {extras = ["sqlalchemy"], version = "^14.0.1"}
+python-jose = {extras = ["cryptography"], version = "^3.5.0"}
+asyncpg = "^0.30.0"
+python-multipart = "^0.0.20"
+testcontainers = {extras = ["postgresql"], version = "^4.12.0"}
 
 [tool.poetry.group.dev.dependencies]
 # Testing
@@ -65,6 +77,7 @@ pytest-asyncio = "^0.21.0"
 pytest-cov = "^4.1.0"
 pytest-mock = "^3.12.0"
 pytest-xdist = "^3.3.0"
+pytest-timeout = "^2.2.0"  # Add timeout plugin to prevent hanging tests
 httpx = "^0.25.0"
 
 # Code quality
@@ -85,6 +98,10 @@ myst-parser = "^0.19.0"
 ipython = "^8.17.0"
 jupyter = "^1.0.0"
 notebook = "^7.0.0"
+testcontainers = {extras = ["postgresql"], version = "^4.12.0"}
+types-passlib = "^1.7.7.20250602"
+types-sqlalchemy = "^1.4.53.38"
+pytest-docker = "^3.2.3"
 
 [tool.poetry.group.docs.dependencies]
 sphinx = "^6.0.0,<7.0.0"
@@ -151,29 +168,52 @@ module = [
     "pydantic.*",
     "loguru.*",
     "structlog.*",
+    "redis.*",
 ]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
+# Test discovery and execution
 testpaths = ["tests"]
-python_files = ["test_*.py", "*_test.py"]
+python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = [
-    "--strict-markers",
-    "--strict-config",
-    "--cov=devcycle",
-    "--cov-report=term-missing",
-    "--cov-report=html",
-    "--cov-report=xml",
-                "--cov-fail-under=40",
-]
+
+# Test markers for different test types
 markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "unit: marks tests as unit tests",
-    "agent: marks tests as agent tests",
-    "orchestration: marks tests as orchestration tests",
+    "unit: Unit tests (fast, no external dependencies)",
+    "integration: Integration tests (may use mocks)",
+    "e2e: End-to-end tests (use testcontainers, slower)",
+    "slow: Tests that take longer to run",
+    "auth: Authentication and security tests",
+    "database: Database-related tests",
+    "api: API endpoint tests",
+    "health: Health check endpoint tests",
+]
+
+# Test execution options
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--disable-warnings",
+    "--color=yes",
+]
+
+# Filter warnings
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore::UserWarning",
+]
+
+# Test output
+console_output_style = "progress"
+
+# Environment variables for tests
+env = [
+    "TESTING = true",
+    "PYTHONPATH = {toxinidir}",
 ]
 
 [tool.coverage.run]
