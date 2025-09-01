@@ -1,10 +1,9 @@
 """
 Dependency injection for DevCycle.
 
-This module provides dependency injection functions for FastAPI,
-including services, repositories, and other core components.
+This module provides simplified dependency injection functions for FastAPI,
+using direct instantiation instead of complex factory patterns.
 """
-
 
 from uuid import UUID
 
@@ -17,14 +16,13 @@ from .database.connection import get_async_session
 from .messaging.middleware import MessageValidator
 from .messaging.validation import MessageValidationConfig
 from .repositories.agent_repository import AgentRepository, AgentTaskRepository
-from .repositories.factory import get_repository_factory
 from .repositories.user_repository import UserRepository
 from .services.agent_availability_service import AgentAvailabilityService
 from .services.agent_service import AgentService
-from .services.factory import get_service_factory
 from .services.user_service import UserService
 
 
+# Repository Dependencies - Direct instantiation
 async def get_user_repository(
     session: AsyncSession = Depends(get_async_session),
 ) -> UserRepository:
@@ -37,25 +35,7 @@ async def get_user_repository(
     Returns:
         UserRepository instance
     """
-    repository_factory = get_repository_factory(session)
-    return repository_factory.get_user_repository()
-
-
-async def get_user_service(
-    session: AsyncSession = Depends(get_async_session),
-) -> UserService:
-    """
-    Get user service dependency.
-
-    Args:
-        session: Database session
-
-    Returns:
-        UserService instance
-    """
-    repository_factory = get_repository_factory(session)
-    service_factory = get_service_factory(repository_factory)
-    return service_factory.get_user_service()
+    return UserRepository(session)
 
 
 async def get_agent_repository(
@@ -70,8 +50,7 @@ async def get_agent_repository(
     Returns:
         AgentRepository instance
     """
-    repository_factory = get_repository_factory(session)
-    return repository_factory.get_agent_repository()
+    return AgentRepository(session)
 
 
 async def get_agent_task_repository(
@@ -86,25 +65,40 @@ async def get_agent_task_repository(
     Returns:
         AgentTaskRepository instance
     """
-    repository_factory = get_repository_factory(session)
-    return repository_factory.get_agent_task_repository()
+    return AgentTaskRepository(session)
+
+
+# Service Dependencies - Direct instantiation with repository dependencies
+async def get_user_service(
+    user_repository: UserRepository = Depends(get_user_repository),
+) -> UserService:
+    """
+    Get user service dependency.
+
+    Args:
+        user_repository: User repository instance
+
+    Returns:
+        UserService instance
+    """
+    return UserService(user_repository)
 
 
 async def get_agent_service(
-    session: AsyncSession = Depends(get_async_session),
+    agent_repository: AgentRepository = Depends(get_agent_repository),
+    agent_task_repository: AgentTaskRepository = Depends(get_agent_task_repository),
 ) -> AgentService:
     """
     Get agent service dependency.
 
     Args:
-        session: Database session
+        agent_repository: Agent repository instance
+        agent_task_repository: Agent task repository instance
 
     Returns:
         AgentService instance
     """
-    repository_factory = get_repository_factory(session)
-    service_factory = get_service_factory(repository_factory)
-    return service_factory.get_agent_service()
+    return AgentService(agent_repository, agent_task_repository)
 
 
 async def get_current_user_id(user: User = Depends(current_active_user)) -> UUID:

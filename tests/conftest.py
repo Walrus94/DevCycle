@@ -13,8 +13,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from devcycle.core.dependencies import get_async_session
-from devcycle.core.repositories.factory import RepositoryFactory
-from devcycle.core.services.factory import ServiceFactory
+from devcycle.core.repositories.agent_repository import (
+    AgentRepository,
+    AgentTaskRepository,
+)
+from devcycle.core.repositories.user_repository import UserRepository
+from devcycle.core.services.agent_service import AgentService
+from devcycle.core.services.user_service import UserService
 
 # We'll create the app with proper configuration
 app = None
@@ -198,18 +203,43 @@ def client(async_client) -> AsyncClient:
 
 
 @pytest.fixture
-def mock_repository_factory() -> RepositoryFactory:
-    """Create a mock repository factory for unit tests."""
+def mock_user_repository():
+    """Create a mock user repository for unit tests."""
     from unittest.mock import AsyncMock
 
-    mock_session = AsyncMock()
-    return RepositoryFactory(mock_session)
+    return AsyncMock(spec=UserRepository)
 
 
 @pytest.fixture
-def mock_service_factory(mock_repository_factory) -> ServiceFactory:
-    """Create a mock service factory for unit tests."""
-    return ServiceFactory(mock_repository_factory)
+def mock_agent_repository():
+    """Create a mock agent repository for unit tests."""
+    from unittest.mock import AsyncMock
+
+    return AsyncMock(spec=AgentRepository)
+
+
+@pytest.fixture
+def mock_agent_task_repository():
+    """Create a mock agent task repository for unit tests."""
+    from unittest.mock import AsyncMock
+
+    return AsyncMock(spec=AgentTaskRepository)
+
+
+@pytest.fixture
+def mock_user_service(mock_user_repository):
+    """Create a mock user service for unit tests."""
+    from unittest.mock import AsyncMock
+
+    return AsyncMock(spec=UserService)
+
+
+@pytest.fixture
+def mock_agent_service(mock_agent_repository, mock_agent_task_repository):
+    """Create a mock agent service for unit tests."""
+    from unittest.mock import AsyncMock
+
+    return AsyncMock(spec=AgentService)
 
 
 # Test isolation fixtures
