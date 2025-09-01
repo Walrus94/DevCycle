@@ -44,10 +44,35 @@ DevCycle is a Proof of Concept (POC) that leverages multiple specialized AI agen
    pip install -r requirements.txt
    ```
 
-3. **Verify installation**
+3. **Configure environment**
+   ```bash
+   # Set environment (development, testing, production)
+   export ENVIRONMENT=development
+
+   # Or create a .env file
+   echo "ENVIRONMENT=development" > .env
+   ```
+
+4. **Verify installation**
    ```bash
    python -c "import devcycle; print('DevCycle installed successfully!')"
    ```
+
+## Configuration
+
+DevCycle uses a unified, environment-aware configuration system. See [Configuration Management Guide](docs/configuration-management.md) for detailed instructions.
+
+**Quick configuration:**
+```bash
+# Development (default)
+export ENVIRONMENT=development
+
+# Testing
+export ENVIRONMENT=testing
+
+# Production
+export ENVIRONMENT=production
+```
 
 ## Kafka Setup
 
