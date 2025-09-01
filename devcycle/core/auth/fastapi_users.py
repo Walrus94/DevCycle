@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import get_config
 from ..database.connection import get_async_session
+from ..logging import get_logger
 from .models import User
 
 
@@ -28,6 +29,7 @@ class UserManager(BaseUserManager[User, UUID]):
 
     def __init__(self, user_db: Any) -> None:
         super().__init__(user_db)
+        self.logger = get_logger(__name__)
         config = get_config()
         self.reset_password_token_secret = config.security.secret_key
         self.verification_token_secret = config.security.secret_key
@@ -40,19 +42,34 @@ class UserManager(BaseUserManager[User, UUID]):
         self, user: User, request: Optional[Request] = None
     ) -> None:
         """Handle post-registration actions."""
-        print(f"User {user.id} has registered.")
+        self.logger.info(
+            "User registered successfully",
+            user_id=str(user.id),
+            user_email=user.email,
+            event_type="user_registration",
+        )
 
     async def on_after_forgot_password(
         self, user: User, token: str, request: Optional[Request] = None
     ) -> None:
         """Handle post-forgot-password actions."""
-        print(f"User {user.id} has forgot their password. Reset token: {token}")
+        self.logger.info(
+            "Password reset requested",
+            user_id=str(user.id),
+            user_email=user.email,
+            event_type="password_reset_request",
+        )
 
     async def on_after_request_verify(
         self, user: User, token: str, request: Optional[Request] = None
     ) -> None:
         """Handle post-request-verify actions."""
-        print(f"Verification requested for user {user.id}. Verification token: {token}")
+        self.logger.info(
+            "Email verification requested",
+            user_id=str(user.id),
+            user_email=user.email,
+            event_type="email_verification_request",
+        )
 
 
 async def get_user_db(

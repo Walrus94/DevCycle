@@ -15,6 +15,53 @@ import structlog
 from .config import get_config
 
 
+def _add_correlation_id(
+    logger: Any, method_name: str, event_dict: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Add correlation ID for request tracing."""
+    import contextvars
+
+    # Try to get correlation ID from context
+    correlation_id = getattr(contextvars, "_correlation_id", None)
+    if correlation_id is not None:
+        event_dict["correlation_id"] = correlation_id.get()
+    else:
+        # Generate a simple correlation ID if not available
+        import uuid
+
+        event_dict["correlation_id"] = str(uuid.uuid4())[:8]
+
+    return event_dict
+
+
+def _add_service_metadata(
+    logger: Any, method_name: str, event_dict: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Add service metadata for better Kibana filtering."""
+    config = get_config()
+
+    event_dict.update(
+        {
+            "service_name": "devcycle",
+            "service_version": "0.1.0",
+            "environment": config.environment.value,
+            "hostname": _get_hostname(),
+        }
+    )
+
+    return event_dict
+
+
+def _get_hostname() -> str:
+    """Get hostname for logging."""
+    import socket
+
+    try:
+        return socket.gethostname()
+    except Exception:
+        return "unknown"
+
+
 def setup_logging(
     level: Optional[str] = None,
     log_file: Optional[Path] = None,
@@ -42,6 +89,12 @@ def setup_logging(
         structlog.processors.TimeStamper(fmt="iso"),
         structlog.processors.StackInfoRenderer(),
         structlog.processors.format_exc_info,
+        # Add service information for better Kibana filtering
+        structlog.processors.add_log_level,
+        # Add correlation ID for request tracing
+        _add_correlation_id,
+        # Add service metadata
+        _add_service_metadata,
     ]
 
     # Add JSON renderer for production/Kibana compatibility

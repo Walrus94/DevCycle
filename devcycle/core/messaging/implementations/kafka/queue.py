@@ -17,6 +17,7 @@ from confluent_kafka.admin import AdminClient, NewTopic
 
 from devcycle.core.protocols.message import Message
 
+from ....logging import get_logger
 from ...config import KafkaConfig, MessagingConfig, QueuePriority
 from ...interfaces.queue import MessageQueueInterface, QueueMessage
 
@@ -32,6 +33,7 @@ class KafkaMessageQueue(MessageQueueInterface):
     def __init__(self, config: MessagingConfig):
         self.config = config
         self.kafka_config = config.kafka or KafkaConfig()
+        self.logger = get_logger(__name__)
 
         # Kafka clients
         self._producer: Optional[Producer] = None
@@ -336,7 +338,12 @@ class KafkaMessageQueue(MessageQueueInterface):
                     return None
                 else:
                     # Log error and continue
-                    print(f"Kafka consumer error: {message.error()}")
+                    self.logger.error(
+                        "Kafka consumer error",
+                        error_code=message.error().code(),
+                        error_message=str(message.error()),
+                        event_type="kafka_consumer_error",
+                    )
                     return None
 
             # Parse message
@@ -360,7 +367,12 @@ class KafkaMessageQueue(MessageQueueInterface):
             return queue_message
 
         except Exception as e:
-            print(f"Error getting message from Kafka: {e}")
+            self.logger.error(
+                "Error getting message from Kafka",
+                error_type=type(e).__name__,
+                error_message=str(e),
+                event_type="kafka_message_error",
+            )
             return None
 
     async def _consumer_loop(self) -> None:
@@ -378,12 +390,29 @@ class KafkaMessageQueue(MessageQueueInterface):
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                print(f"Error in consumer loop: {e}")
+                self.logger.error(
+                    "Error in consumer loop",
+                    error_type=type(e).__name__,
+                    error_message=str(e),
+                    event_type="kafka_consumer_loop_error",
+                )
                 await asyncio.sleep(1)
 
     def _delivery_report(self, err: Any, msg: Any) -> None:
         """Callback for message delivery reports."""
         if err is not None:
-            print(f"Message delivery failed: {err}")
+            self.logger.error(
+                "Message delivery failed",
+                error_message=str(err),
+                topic=msg.topic() if msg else None,
+                partition=msg.partition() if msg else None,
+                event_type="kafka_delivery_failed",
+            )
         else:
-            print(f"Message delivered to {msg.topic()} [{msg.partition()}]")
+            self.logger.debug(
+                "Message delivered successfully",
+                topic=msg.topic(),
+                partition=msg.partition(),
+                offset=msg.offset(),
+                event_type="kafka_delivery_success",
+            )

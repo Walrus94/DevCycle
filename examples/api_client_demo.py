@@ -11,6 +11,7 @@ import json
 from typing import Any, Dict, Optional
 
 import httpx
+from logging_utils import get_example_logger, setup_example_logging
 
 
 class DevCycleAPIClient:
@@ -21,6 +22,7 @@ class DevCycleAPIClient:
         self.api_base = f"{self.base_url}/api/v1"
         self.token: Optional[str] = None
         self.client = httpx.AsyncClient()
+        self.logger = get_example_logger(__name__)
 
     async def close(self) -> None:
         """Close the HTTP client."""
@@ -46,14 +48,14 @@ class DevCycleAPIClient:
             if response.status_code == 200:
                 data = response.json()
                 self.token = data.get("access_token")
-                print(f"✅ Authenticated as {email}")
+                self.logger.success(f"Authenticated as {email}")
                 return True
             else:
-                print(f"❌ Authentication failed: {response.status_code}")
+                self.logger.error(f"Authentication failed: {response.status_code}")
                 return False
 
         except Exception as e:
-            print(f"❌ Authentication error: {e}")
+            self.logger.error(f"Authentication error: {e}")
             return False
 
     def _get_headers(self) -> Dict[str, str]:
@@ -117,8 +119,11 @@ class DevCycleAPIClient:
 
 async def demo_api_client() -> None:
     """Demonstrate API client usage."""
-    print("🚀 DevCycle API Client Demo")
-    print("=" * 50)
+    # Setup logging for the demo
+    setup_example_logging()
+    logger = get_example_logger(__name__)
+
+    logger.demo_start("DevCycle API Client Demo")
 
     # Initialize client
     client = DevCycleAPIClient()
