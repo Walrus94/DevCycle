@@ -1,8 +1,8 @@
 """
-Integration test configuration and fixtures for DevCycle.
+End-to-end test configuration and fixtures for DevCycle.
 
 This module provides common test fixtures and configuration
-for integration tests.
+for end-to-end tests using testcontainers.
 """
 
 from unittest.mock import Mock
@@ -11,7 +11,7 @@ import pytest
 
 from devcycle.core.config import DevCycleConfig
 
-# Import testcontainers fixtures for integration tests
+# Import testcontainers fixtures for e2e tests
 # Note: These fixtures are available through conftest_testcontainers.py
 # and will be automatically loaded by pytest
 
@@ -20,43 +20,35 @@ from devcycle.core.config import DevCycleConfig
 def mock_config() -> DevCycleConfig:
     """Mock configuration for testing."""
     mock_config_instance = Mock(spec=DevCycleConfig)
+    mock_config_instance.database.host = "localhost"
+    mock_config_instance.database.port = 5432
+    mock_config_instance.database.username = "test_user"
+    mock_config_instance.database.password = "test_password"
+    mock_config_instance.database.database = "devcycle_test"
+    mock_config_instance.database.pool_size = 5
+    mock_config_instance.database.max_overflow = 10
+    mock_config_instance.database.echo = False
 
-    # Mock logging config
+    mock_config_instance.api.host = "localhost"
+    mock_config_instance.api.port = 8000
+    mock_config_instance.api.debug = True
+    mock_config_instance.api.reload = False
+
+    mock_config_instance.redis.host = "localhost"
+    mock_config_instance.redis.port = 6379
+    mock_config_instance.redis.db = 0
+    mock_config_instance.redis.password = None
+
     mock_config_instance.logging.level = "DEBUG"
+    mock_config_instance.logging.format = (
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     mock_config_instance.logging.json_output = False
     mock_config_instance.logging.log_file = None
 
-    # Mock database config
-    mock_config_instance.database.host = "localhost"
-    mock_config_instance.database.port = 5432
-    mock_config_instance.database.username = "test"
-    mock_config_instance.database.password = "test"
-    mock_config_instance.database.database = "test_db"
-    mock_config_instance.database.echo = False
-
-    # Mock API config
-    mock_config_instance.api.host = "127.0.0.1"
-    mock_config_instance.api.port = 8000
-    mock_config_instance.api.reload = False
-    mock_config_instance.api.cors_origins = ["*"]
-    mock_config_instance.api.cors_credentials = True
-    mock_config_instance.api.cors_methods = ["*"]
-    mock_config_instance.api.cors_headers = ["*"]
-
-    # Mock HuggingFace config
     mock_config_instance.huggingface.token = "test_token"
-    mock_config_instance.huggingface.org_name = "test_org"
-
-    # Mock agent config
-    mock_config_instance.agent.max_execution_time = 300
-    mock_config_instance.agent.max_memory_usage = 1024
-    mock_config_instance.agent.enable_logging = True
-    mock_config_instance.agent.enable_metrics = True
-    mock_config_instance.agent.model_name = "test-model"
-    mock_config_instance.agent.temperature = 0.7
-    mock_config_instance.agent.max_tokens = 1000
-    mock_config_instance.agent.max_retries = 3
-    mock_config_instance.agent.retry_delay = 1.0
+    mock_config_instance.huggingface.organization = "test_org"
+    mock_config_instance.huggingface.space_name = "test_space"
 
     return mock_config_instance
 
@@ -77,11 +69,11 @@ def sample_user_data() -> dict:
 def sample_user_response() -> dict:
     """Sample user response data for testing."""
     return {
-        "id": "test-user-id",
+        "id": "test_user_id",
         "email": "testuser@example.com",
         "is_active": True,
-        "is_verified": False,
         "is_superuser": False,
+        "is_verified": False,
     }
 
 
@@ -95,12 +87,14 @@ def sample_agent_data() -> dict:
 def sample_agent_response() -> dict:
     """Sample agent response data for testing."""
     return {
-        "id": "test-agent-id",
+        "id": "test_agent_id",
         "name": "test_agent",
         "type": "test_type",
-        "status": "idle",
+        "status": "offline",
         "config": {"param1": "value1"},
-        "created_at": "2024-01-01T00:00:00Z",
+        "capabilities": ["test_capability"],
+        "created_at": "2023-01-01T00:00:00Z",
+        "updated_at": "2023-01-01T00:00:00Z",
     }
 
 
@@ -108,10 +102,10 @@ def sample_agent_response() -> dict:
 def sample_message_data() -> dict:
     """Sample message data for testing."""
     return {
-        "content": "Test message content",
-        "sender": "test_sender",
-        "recipient": "test_recipient",
-        "message_type": "text",
+        "action": "test_action",
+        "data": {"key": "value"},
+        "priority": "normal",
+        "ttl": 300,
     }
 
 
@@ -119,13 +113,14 @@ def sample_message_data() -> dict:
 def sample_message_response() -> dict:
     """Sample message response data for testing."""
     return {
-        "id": "test-message-id",
-        "content": "Test message content",
-        "sender": "test_sender",
-        "recipient": "test_recipient",
-        "message_type": "text",
-        "timestamp": "2024-01-01T00:00:00Z",
-        "status": "sent",
+        "id": "test_message_id",
+        "action": "test_action",
+        "data": {"key": "value"},
+        "priority": "normal",
+        "ttl": 300,
+        "status": "pending",
+        "created_at": "2023-01-01T00:00:00Z",
+        "updated_at": "2023-01-01T00:00:00Z",
     }
 
 
