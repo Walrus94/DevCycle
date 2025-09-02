@@ -105,6 +105,7 @@ async def list_agents(
 @router.get("/online", response_model=List[AgentResponse])
 async def get_online_agents(
     agent_service: AgentService = Depends(get_agent_service),
+    user: User = Depends(current_active_user),
 ) -> List[AgentResponse]:
     """
     Get all online agents.

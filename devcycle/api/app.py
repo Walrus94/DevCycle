@@ -21,6 +21,7 @@ from starlette.types import ASGIApp
 
 from ..core.config import get_config
 from ..core.logging import get_logger
+from .middleware.csrf_protection import CSRFProtectionMiddleware
 from .versioning import get_version_info
 
 
@@ -38,6 +39,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers[
             "Permissions-Policy"
         ] = "geolocation=(), microphone=(), camera=()"
+
+        # CORS-specific security headers
+        origin = request.headers.get("origin")
+        if origin:
+            # Only set CORS headers for actual cross-origin requests
+            response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+            response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+            response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
 
         # Remove server information
         if "server" in response.headers:
@@ -58,8 +67,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.requests: Dict[str, List[float]] = {}
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        logger = get_logger(__name__)
+        logger.debug(f"🔍 RateLimitMiddleware processing {request.method} {request.url}")
+
         # Only apply rate limiting to auth endpoints
         if request.url.path.startswith("/api/v1/auth"):
+            logger.debug("🔍 Auth endpoint detected, applying rate limiting...")
             client_ip = request.client.host if request.client else "unknown"
             current_time = time.time()
 
@@ -83,6 +96,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
             # Check rate limit
             if len(self.requests[client_ip]) >= self.max_requests:
+                logger.warning(f"❌ Rate limit exceeded for {client_ip}")
                 return JSONResponse(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                     content={
@@ -96,8 +110,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
             # Record request
             self.requests[client_ip].append(current_time)
+            logger.debug(f"✅ Rate limit check passed for {client_ip}")
+        else:
+            logger.debug("✅ Non-auth endpoint, skipping rate limiting")
 
+        logger.debug("🔍 RateLimitMiddleware calling next middleware...")
         response = await call_next(request)
+        logger.debug(
+            f"✅ RateLimitMiddleware completed, response status: {response.status_code}"
+        )
         return response
 
 
@@ -197,15 +218,27 @@ def _setup_middleware(app: FastAPI, config: Any) -> None:
     # Security headers middleware (add first to ensure headers are set)
     app.add_middleware(SecurityHeadersMiddleware)
 
-    # Rate limiting middleware for auth endpoints
+    # XSS Protection middleware - REMOVED: Using FastAPI built-in validation instead
+    # app.add_middleware(XSSProtectionMiddleware, strict_mode=True)
 
-    # CORS middleware
+    # CSRF Protection middleware (only in production)
+    if config.environment == "production":
+        app.add_middleware(
+            CSRFProtectionMiddleware, secret_key=config.security.secret_key
+        )
+
+    # Rate limiting middleware for auth endpoints
+    app.add_middleware(RateLimitMiddleware, max_requests=10, window_seconds=60)
+
+    # CORS middleware with environment-specific configuration
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=config.api.cors_origins,
-        allow_credentials=config.api.cors_credentials,
-        allow_methods=config.api.cors_methods,
-        allow_headers=config.api.cors_headers,
+        allow_origins=config.cors_origins_resolved,
+        allow_credentials=config.cors_credentials_resolved,
+        allow_methods=config.cors_methods_resolved,
+        allow_headers=config.cors_headers_resolved,
+        expose_headers=config.cors_expose_headers_resolved,
+        max_age=config.api.cors_max_age,
     )
 
     # Gzip compression middleware
@@ -223,7 +256,9 @@ def _setup_middleware(app: FastAPI, config: Any) -> None:
             f"from {request.client.host if request.client else 'unknown'}"
         )
 
+        logger.debug("🔍 LoggingMiddleware calling next middleware...")
         response = await call_next(request)
+        logger.debug(f"✅ LoggingMiddleware received response: {response.status_code}")
 
         # Log response
         process_time = time.time() - start_time

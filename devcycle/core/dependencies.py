@@ -89,7 +89,8 @@ async def get_agent_service(
     Returns:
         AgentService instance
     """
-    return AgentService(agent_repository, agent_task_repository, lifecycle_service)
+    service = AgentService(agent_repository, agent_task_repository, lifecycle_service)
+    return service
 
 
 async def get_current_user_id(user: User = Depends(current_active_user)) -> UUID:

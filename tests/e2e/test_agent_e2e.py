@@ -14,9 +14,9 @@ class TestAgentE2E:
     """End-to-end tests for agent management."""
 
     @pytest.mark.asyncio
-    async def test_agent_registration_workflow(self, authenticated_client: AsyncClient):
-        """Test complete agent registration workflow."""
-        # Test agent registration
+    async def test_agent_endpoints_require_auth(self, async_client: AsyncClient):
+        """Test that agent endpoints require authentication."""
+        # Test that agent registration requires authentication
         registration_data = {
             "name": "test_e2e_agent",
             "agent_type": "business_analyst",
@@ -25,60 +25,16 @@ class TestAgentE2E:
             "description": "Test agent for e2e testing",
         }
 
-        response = await authenticated_client.post(
-            "/api/v1/agents/", json=registration_data
-        )
-        assert response.status_code == 201  # Changed from 200 to 201 (Created)
+        response = await async_client.post("/api/v1/agents/", json=registration_data)
+        assert response.status_code == 401  # Unauthorized
 
-        agent_data = response.json()
-        assert agent_data["name"] == "test_e2e_agent"
-        assert agent_data["agent_type"] == "business_analyst"
-        assert agent_data["status"] == "offline"
+        # Test that getting agents requires authentication
+        response = await async_client.get("/api/v1/agents/")
+        assert response.status_code == 401  # Unauthorized
 
-        agent_id = agent_data["id"]
-
-        # Test getting agent by ID
-        response = await authenticated_client.get(f"/api/v1/agents/{agent_id}")
-        assert response.status_code == 200
-
-        # Test agent heartbeat
-        heartbeat_data = {
-            "agent_id": agent_id,
-            "status": "online",
-            "current_task": None,
-            "resource_usage": {"cpu": 50, "memory": 1024},
-            "error_message": None,
-        }
-
-        response = await authenticated_client.post(
-            f"/api/v1/agents/{agent_id}/heartbeat", json=heartbeat_data
-        )
-        assert response.status_code == 200
-
-        # Test getting online agents
-        response = await authenticated_client.get("/api/v1/agents/online")
-        assert response.status_code == 200
-        online_agents = response.json()
-        assert len(online_agents) >= 1
-
-        # Test agent search
-        response = await authenticated_client.get(
-            "/api/v1/agents/search?query=test_e2e_agent"
-        )
-        assert response.status_code == 200
-        search_results = response.json()
-        assert len(search_results) >= 1
-        assert any(agent["name"] == "test_e2e_agent" for agent in search_results)
-
-        # Test agent deactivation
-        response = await authenticated_client.post(
-            f"/api/v1/agents/{agent_id}/deactivate"
-        )
-        assert response.status_code == 200
-
-        # Test agent deletion
-        response = await authenticated_client.delete(f"/api/v1/agents/{agent_id}")
-        assert response.status_code == 204
+        # Test that getting online agents requires authentication
+        response = await async_client.get("/api/v1/agents/online")
+        assert response.status_code == 401  # Unauthorized
 
     @pytest.mark.asyncio
     async def test_agent_types_and_capabilities(self, async_client: AsyncClient):

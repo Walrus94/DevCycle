@@ -14,6 +14,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from testcontainers.postgres import PostgresContainer  # type: ignore
+from testcontainers.redis import RedisContainer  # type: ignore
 
 from devcycle.core.dependencies import get_async_session
 
@@ -22,29 +23,78 @@ app = None
 
 
 @pytest.fixture(scope="session")
-def test_app():
+def test_app(test_redis_url):
     """Create the test app with the test environment."""
+    print("🏗️  Creating test application...")
     global app
-    from devcycle.api.app import create_app
+    try:
+        import os
 
-    app = create_app(environment="testing")
-    return app
+        from devcycle.api.app import create_app
+
+        print("📱 Creating app with testing environment...")
+
+        # Set Redis environment variables for testing
+        redis_host, redis_port = test_redis_url.replace("redis://", "").split(":")
+        os.environ["REDIS_HOST"] = redis_host
+        os.environ["REDIS_PORT"] = redis_port
+        os.environ["REDIS_PASSWORD"] = ""  # No password for test Redis
+        os.environ["REDIS_DB"] = "0"
+
+        app = create_app(environment="testing")
+        print("✅ Test application created successfully")
+        return app
+    except Exception as e:
+        print(f"❌ Error creating test app: {e}")
+        raise
 
 
 @pytest.fixture(scope="session")
 def postgres_container():
     """Create a PostgreSQL container for testing."""
-    with PostgresContainer("postgres:15-alpine") as postgres:
-        # Wait for the container to be ready
-        postgres.get_connection_url()
-        yield postgres
+    print("🔧 Starting PostgreSQL container setup...")
+    try:
+        print("📦 Creating PostgresContainer with postgres:15-alpine...")
+        with PostgresContainer("postgres:15-alpine") as postgres:
+            print("⏳ Waiting for container to be ready...")
+            # Wait for the container to be ready
+            connection_url = postgres.get_connection_url()
+            print(f"✅ Container ready! Connection URL: {connection_url}")
+            yield postgres
+            print("🧹 Cleaning up PostgreSQL container...")
+    except Exception as e:
+        print(f"❌ Error setting up PostgreSQL container: {e}")
+        raise
+
+
+@pytest.fixture(scope="session")
+def redis_container():
+    """Create a Redis container for testing."""
+    print("🔧 Starting Redis container setup...")
+    try:
+        print("📦 Creating RedisContainer with redis:7-alpine...")
+        with RedisContainer("redis:7-alpine") as redis:
+            print("⏳ Waiting for Redis container to be ready...")
+            # Wait for the container to be ready
+            # RedisContainer doesn't have get_connection_url(), so we construct it
+            host = redis.get_container_host_ip()
+            port = redis.get_exposed_port(6379)
+            connection_url = f"redis://{host}:{port}"
+            print(f"✅ Redis container ready! Connection URL: {connection_url}")
+            yield redis
+            print("🧹 Cleaning up Redis container...")
+    except Exception as e:
+        print(f"❌ Error setting up Redis container: {e}")
+        raise
 
 
 @pytest.fixture(scope="session")
 def test_db_url(postgres_container):
     """Get the test database URL from the container."""
+    print("🔗 Getting test database URL...")
     # Convert the sync URL to async
     sync_url = postgres_container.get_connection_url()
+    print(f"📡 Sync URL: {sync_url}")
 
     # Handle different URL formats
     if sync_url.startswith("postgresql+psycopg2://"):
@@ -56,30 +106,55 @@ def test_db_url(postgres_container):
     else:
         async_url = sync_url
 
+    print(f"🔄 Async URL: {async_url}")
     return async_url
+
+
+@pytest.fixture(scope="session")
+def test_redis_url(redis_container):
+    """Get the test Redis URL from the container."""
+    print("🔗 Getting test Redis URL...")
+    # RedisContainer doesn't have get_connection_url(), so we construct it manually
+    host = redis_container.get_container_host_ip()
+    port = redis_container.get_exposed_port(6379)
+    redis_url = f"redis://{host}:{port}"
+    print(f"📡 Redis URL: {redis_url}")
+    return redis_url
 
 
 @pytest.fixture(scope="session")
 async def test_db_engine(test_db_url):
     """Create a test database engine using testcontainers."""
-    engine = create_async_engine(test_db_url, echo=False)
+    print("🚀 Creating test database engine...")
+    try:
+        engine = create_async_engine(test_db_url, echo=False)
+        print("✅ Engine created successfully")
 
-    # Test connection
-    async with engine.begin() as conn:
-        await conn.execute(text("SELECT 1"))
+        # Test connection
+        print("🔍 Testing database connection...")
+        async with engine.begin() as conn:
+            await conn.execute(text("SELECT 1"))
+        print("✅ Database connection test successful")
 
-    # Run database migrations to set up schema
-    await run_database_migrations(engine)
+        # Run database migrations to set up schema
+        print("📋 Running database migrations...")
+        await run_database_migrations(engine)
+        print("✅ Database migrations completed")
 
-    yield engine
-
-    await engine.dispose()
+        yield engine
+        print("🧹 Disposing database engine...")
+        await engine.dispose()
+        print("✅ Database engine disposed")
+    except Exception as e:
+        print(f"❌ Error with database engine: {e}")
+        raise
 
 
 async def run_database_migrations(engine):
     """Set up the database schema directly using SQLAlchemy."""
     from sqlalchemy import text
 
+    print("🏗️  Setting up database schema...")
     # Create the database schema directly
     async with engine.begin() as conn:
         # Create user table (FastAPI Users base table)
@@ -192,23 +267,27 @@ async def run_database_migrations(engine):
             )
         )
 
-        print("Database schema initialized successfully")
+        print("✅ Database schema initialized successfully")
 
 
 @pytest.fixture
 async def test_db_session(test_db_engine) -> AsyncGenerator[AsyncSession, None]:
     """Create a test database session."""
+    print("🔧 Creating test database session...")
     async_session = sessionmaker(
         test_db_engine, class_=AsyncSession, expire_on_commit=False
     )
 
     async with async_session() as session:
+        print("✅ Test database session created")
         yield session
+        print("🧹 Test database session closed")
 
 
 @pytest.fixture
 def async_client(test_db_session, test_app) -> AsyncClient:
     """Create an async test client."""
+    print("🌐 Creating async test client...")
 
     # Override the database dependency
     async def override_get_async_session():
@@ -217,6 +296,7 @@ def async_client(test_db_session, test_app) -> AsyncClient:
     test_app.dependency_overrides[get_async_session] = override_get_async_session
 
     client = AsyncClient(app=test_app, base_url="http://test")
+    print("✅ Async test client created")
 
     return client
 
@@ -230,48 +310,93 @@ def client(async_client) -> AsyncClient:
 @pytest.fixture
 async def authenticated_client(async_client, test_db_session) -> AsyncClient:
     """Create an authenticated test client with a test user."""
+    print("🔐 Creating authenticated test client...")
     from passlib.context import CryptContext
     from sqlalchemy import text
 
-    # Create password context for hashing
-    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    try:
+        # Create password context for hashing
+        print("🔑 Creating password context...")
+        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-    # Create a test user directly in the database
-    hashed_password = pwd_context.hash("TestPass123!")
+        # Create a test user directly in the database
+        print("👤 Creating test user...")
+        hashed_password = pwd_context.hash("TestPass123!")
 
-    # Insert user directly into database
-    await test_db_session.execute(
-        text(
+        # Insert user directly into database
+        print("💾 Inserting test user into database...")
+        await test_db_session.execute(
+            text(
+                """
+                INSERT INTO "user" (email, hashed_password, is_active, is_superuser,
+                                   is_verified, role)
+                VALUES (:email, :hashed_password, :is_active, :is_superuser,
+                       :is_verified, :role)
             """
-            INSERT INTO "user" (email, hashed_password, is_active, is_superuser,
-                               is_verified, role)
-            VALUES (:email, :hashed_password, :is_active, :is_superuser,
-                   :is_verified, :role)
-        """
-        ),
-        {
-            "email": "testuser@example.com",
-            "hashed_password": hashed_password,
-            "is_active": True,
-            "is_superuser": False,
-            "is_verified": True,
-            "role": "user",
-        },
-    )
-    await test_db_session.commit()
+            ),
+            {
+                "email": "testuser@example.com",
+                "hashed_password": hashed_password,
+                "is_active": True,
+                "is_superuser": False,
+                "is_verified": True,
+                "role": "user",
+            },
+        )
+        await test_db_session.commit()
+        print("✅ Test user created successfully")
 
-    # Login to get token
-    login_response = await async_client.post(
-        "/api/v1/auth/jwt/login",
-        data={"username": "testuser@example.com", "password": "TestPass123!"},
-    )
+        # Login to get token
+        print("🔑 Logging in to get authentication token...")
+        print("🌐 Making request to: /api/v1/auth/jwt/login")
+        print("📧 Username: testuser@example.com")
 
-    token = login_response.json()["access_token"]
+        try:
+            print("⏰ Making login request with 30 second timeout...")
+            import asyncio
 
-    # Set the authorization header for all requests
-    async_client.headers.update({"Authorization": f"Bearer {token}"})
+            login_response = await asyncio.wait_for(
+                async_client.post(
+                    "/api/v1/auth/jwt/login",
+                    data={
+                        "username": "testuser@example.com",
+                        "password": "TestPass123!",
+                    },
+                ),
+                timeout=30.0,
+            )
+            print(f"📡 Login response status: {login_response.status_code}")
+            print(f"📄 Login response text: {login_response.text}")
+        except asyncio.TimeoutError:
+            print("❌ Login request timed out after 30 seconds")
+            raise Exception("Login request timed out")
+        except Exception as e:
+            print(f"❌ Exception during login request: {e}")
+            raise
 
-    return async_client
+        if login_response.status_code != 200:
+            print(
+                f"❌ Login failed with status {login_response.status_code}: "
+                f"{login_response.text}"
+            )
+            raise Exception(f"Login failed: {login_response.text}")
+
+        try:
+            token = login_response.json()["access_token"]
+            print("✅ Authentication token obtained")
+        except Exception as e:
+            print(f"❌ Error parsing login response: {e}")
+            print(f"📄 Response content: {login_response.text}")
+            raise
+
+        # Set the authorization header for all requests
+        async_client.headers.update({"Authorization": f"Bearer {token}"})
+        print("✅ Authenticated test client ready")
+
+        return async_client
+    except Exception as e:
+        print(f"❌ Error creating authenticated client: {e}")
+        raise
 
 
 @pytest.fixture(autouse=True)

@@ -10,13 +10,14 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from ..database.models import Base
+from ..validation.input import XSSValidator
 
 
 class AgentStatus(str, Enum):
@@ -91,7 +92,7 @@ class AgentConfiguration(BaseModel):
 
 
 class AgentRegistration(BaseModel):
-    """Agent registration request model."""
+    """Agent registration request model with built-in XSS protection."""
 
     name: str = Field(..., min_length=1, max_length=100)
     agent_type: AgentType
@@ -101,9 +102,25 @@ class AgentRegistration(BaseModel):
     configuration: Optional[AgentConfiguration] = None
     metadata: Dict[str, Any] = {}
 
+    @field_validator("name", "description", "version")
+    @classmethod
+    def validate_no_xss(cls, v: Any) -> Any:
+        """Validate that string fields don't contain XSS patterns."""
+        if v:
+            return XSSValidator.validate_no_xss(v)
+        return v
+
+    @field_validator("name", "description", "version")
+    @classmethod
+    def validate_no_sql_injection(cls, v: Any) -> Any:
+        """Validate that string fields don't contain SQL injection patterns."""
+        if v:
+            return XSSValidator.validate_no_sql_injection(v)
+        return v
+
 
 class AgentUpdate(BaseModel):
-    """Agent update request model."""
+    """Agent update request model with built-in XSS protection."""
 
     name: Optional[str] = Field(None, min_length=1, max_length=100)
     description: Optional[str] = Field(None, max_length=500)
@@ -111,6 +128,22 @@ class AgentUpdate(BaseModel):
     capabilities: Optional[List[AgentCapability]] = None
     configuration: Optional[AgentConfiguration] = None
     metadata: Optional[Dict[str, Any]] = None
+
+    @field_validator("name", "description", "version")
+    @classmethod
+    def validate_no_xss(cls, v: Any) -> Any:
+        """Validate that string fields don't contain XSS patterns."""
+        if v:
+            return XSSValidator.validate_no_xss(v)
+        return v
+
+    @field_validator("name", "description", "version")
+    @classmethod
+    def validate_no_sql_injection(cls, v: Any) -> Any:
+        """Validate that string fields don't contain SQL injection patterns."""
+        if v:
+            return XSSValidator.validate_no_sql_injection(v)
+        return v
 
 
 class AgentResponse(BaseModel):
