@@ -1,6 +1,4 @@
-"""
-Service health checking utilities for E2E tests.
-"""
+"""Service health checking utilities for E2E tests."""
 
 import asyncio
 import logging
@@ -17,7 +15,8 @@ logger = logging.getLogger(__name__)
 class ServiceHealthChecker:
     """Comprehensive service health checking for E2E tests."""
 
-    def __init__(self, config=None) -> None:
+    def __init__(self, config: Dict[str, Any] = None) -> None:
+        """Initialize the service health checker."""
         self.config = config or TEST_CONFIG
         self.health_status: Dict[str, bool] = {}
 
@@ -25,10 +24,10 @@ class ServiceHealthChecker:
         """Check database connectivity and basic operations."""
         try:
             engine = create_async_engine(
-                self.config.database_url,
+                self.config["database_url"],
                 echo=False,
-                pool_size=self.config.database_pool_size,
-                max_overflow=self.config.database_max_overflow,
+                pool_size=self.config.get("database_pool_size", 5),
+                max_overflow=self.config.get("database_max_overflow", 10),
             )
             async with engine.begin() as conn:
                 result = await conn.execute(text("SELECT 1"))
@@ -46,7 +45,8 @@ class ServiceHealthChecker:
 
             async with httpx.AsyncClient() as client:
                 response = await client.get(
-                    f"http://{self.config.api_host}:{self.config.api_port}/health",
+                    f"http://{self.config['api_host']}:"
+                    f"{self.config['api_port']}/health",
                     timeout=10,
                 )
                 return bool(response.status_code == 200)
@@ -87,6 +87,6 @@ class ServiceHealthChecker:
 
 
 async def wait_for_services_ready(timeout: int = 60) -> bool:
-    """Convenience function to wait for services to be ready."""
+    """Wait for services to be ready."""
     checker = ServiceHealthChecker()
     return await checker.wait_for_services(timeout)

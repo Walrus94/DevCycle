@@ -1,6 +1,4 @@
-"""
-Centralized configuration for E2E tests using the unified config system.
-"""
+"""Centralized configuration for E2E tests using the unified config system."""
 
 from devcycle.core.config import get_config
 
@@ -29,3 +27,7 @@ def get_test_api_url() -> str:
     """Get test API base URL."""
     config = get_config()
     return f"http://{config.api.host}:{config.api.port}"
+
+
+# Test configuration instance
+TEST_CONFIG = get_test_config()

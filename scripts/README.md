@@ -48,7 +48,7 @@ Docker-compose uses these environment variables (with defaults):
 
 ## Security Notes
 
-⚠️ **Important**: 
+⚠️ **Important**:
 - **Development**: `init-db.sql` contains hardcoded development passwords
 - **Production**: Modify script to remove default users or use environment variables
 - Use secret management in production environments

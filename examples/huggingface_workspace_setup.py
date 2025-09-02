@@ -12,7 +12,7 @@ from pathlib import Path
 
 # Load environment variables from .env file
 try:
-    from dotenv import load_dotenv  # type: ignore[import-not-found]
+    from dotenv import load_dotenv
 
     load_dotenv()
 except ImportError:
@@ -42,7 +42,7 @@ except ImportError:
 
 
 def main() -> None:
-    """Main example function."""
+    """Run the main example function."""
     print("DevCycle Hugging Face Workspace Setup Example")
     print("=" * 50)
 

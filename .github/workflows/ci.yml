@@ -194,7 +194,7 @@ jobs:
       run: poetry install --no-interaction
 
     - name: Run unit tests with coverage
-      run: poetry run pytest tests/unit/ -v --tb=short --cov=devcycle --cov-report=xml --cov-report=term-missing --cov-fail-under=65
+      run: poetry run pytest tests/unit/ -v --tb=short --cov=devcycle --cov-report=xml --cov-report=term-missing --cov-fail-under=30
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3

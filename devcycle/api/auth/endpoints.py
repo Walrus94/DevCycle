@@ -151,7 +151,7 @@ async def logout(
             blacklist = TokenBlacklist()
 
             # Calculate expiration from JWT payload
-            import jwt  # type: ignore
+            import jwt
 
             from ...core.config import get_config
 

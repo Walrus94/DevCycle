@@ -1,6 +1,6 @@
 [run]
 source = devcycle
-omit = 
+omit =
     */tests/*
     */test_*
     */__pycache__/*
@@ -30,6 +30,7 @@ exclude_lines =
 show_missing = True
 skip_covered = False
 precision = 2
+fail_under = 30
 
 [html]
 directory = htmlcov

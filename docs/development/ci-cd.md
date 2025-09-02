@@ -13,7 +13,7 @@ The CI/CD pipeline uses a **tiered testing strategy** to balance speed with thor
 - **Code quality checks** (formatting, linting, type checking)
 - **Security scan** (quick safety check)
 
-### 🔄 Develop Branch PRs  
+### 🔄 Develop Branch PRs
 - **Unit + Integration tests** (medium thoroughness ~5-8 minutes)
 - **All code quality checks**
 - **Security scan**
@@ -101,7 +101,7 @@ The pipeline automatically determines which tests to run based on the target bra
 
 ```yaml
 # Feature branch → main: Full test suite
-# Feature branch → develop: Unit + Integration tests  
+# Feature branch → develop: Unit + Integration tests
 # Feature branch → feature: Unit tests only
 ```
 
@@ -111,7 +111,7 @@ The pipeline automatically determines which tests to run based on the target bra
 ### Coverage Reporting
 Test coverage is reported to Codecov with separate flags for:
 - Unit tests
-- Integration tests  
+- Integration tests
 - End-to-end tests
 
 ### Performance Benefits

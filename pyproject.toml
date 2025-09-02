@@ -53,7 +53,7 @@ asyncio = "^3.4.3"
 aiohttp = "^3.9.0"
 
 # Redis for caching (optional, not required for auth)
-redis = {extras = ["hiredis"], version = "^5.0.0", optional = true}
+redis = {extras = ["hiredis"], version = "^5.0.0"}
 
 # Message queuing
 confluent-kafka = "^2.3.0"
@@ -88,6 +88,7 @@ flake8-docstrings = "^1.7.0"
 flake8-import-order = "^0.18.2"
 mypy = "^1.7.0"
 pre-commit = "^3.5.0"
+pbr = "^5.11.0"  # Required by bandit
 
 # Documentation
 sphinx = "^6.0.0,<7.0.0"
@@ -147,6 +148,7 @@ multi_line_output = 3
 line_length = 88
 known_first_party = ["devcycle"]
 known_third_party = ["pytest", "black", "isort", "flake8", "mypy"]
+lines_between_sections = 1
 
 [tool.mypy]
 python_version = "3.9"
