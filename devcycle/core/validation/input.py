@@ -65,4 +65,4 @@ class XSSValidator:
                     f"Potentially dangerous SQL pattern detected: {pattern}"
                 )
 
-            return v
+        return v
