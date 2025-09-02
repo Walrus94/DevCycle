@@ -6,6 +6,7 @@ consolidates all configuration sources into a clean, validated approach.
 """
 
 import os
+import secrets
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
@@ -20,6 +21,11 @@ class Environment(str, Enum):
     TESTING = "testing"
     STAGING = "staging"
     PRODUCTION = "production"
+
+
+def generate_secure_secret() -> str:
+    """Generate a cryptographically secure secret key for development."""
+    return secrets.token_urlsafe(32)
 
 
 class LoggingConfig(BaseSettings):
@@ -94,8 +100,10 @@ class SecurityConfig(BaseSettings):
     """Configuration for security settings."""
 
     secret_key: str = Field(
-        default="dev-secret-key-change-in-production",
-        description="Secret key for JWT tokens",
+        default_factory=lambda: generate_secure_secret()
+        if os.getenv("ENVIRONMENT", "development") == "development"
+        else None,
+        description="Secret key for JWT tokens (required in production)",
     )
     algorithm: str = Field(default="HS256", description="JWT algorithm")
     access_token_expire_minutes: int = Field(
@@ -110,12 +118,31 @@ class SecurityConfig(BaseSettings):
     @field_validator("secret_key")
     @classmethod
     def validate_secret_key(cls, v: str) -> str:
-        """Validate secret key is not default in production."""
-        if (
-            v == "dev-secret-key-change-in-production"
-            and os.getenv("ENVIRONMENT", "development") == "production"
-        ):
-            raise ValueError("Secret key must be changed in production")
+        """Validate secret key meets security requirements."""
+        if not v:
+            raise ValueError("Secret key is required")
+
+        if len(v) < 32:
+            raise ValueError("Secret key must be at least 32 characters long")
+
+        # Check for common weak patterns
+        weak_patterns = [
+            "dev-secret-key-change-in-production",
+            "secret",
+            "password",
+            "123456",
+            "admin",
+            "test",
+        ]
+
+        if any(pattern in v.lower() for pattern in weak_patterns):
+            raise ValueError("Secret key contains weak patterns and is not secure")
+
+        # In production, ensure it's not a development default
+        if os.getenv("ENVIRONMENT", "development") == "production":
+            if v == "dev-secret-key-change-in-production":
+                raise ValueError("Secret key must be changed in production")
+
         return v
 
 
