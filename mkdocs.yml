@@ -74,6 +74,7 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.emoji:
       emoji_index: emoji
+
   - admonition
   - pymdownx.details
   - attr_list
@@ -91,6 +92,8 @@ nav:
     - Development Setup: getting-started/development-setup.md
   - Architecture:
     - Overview: architecture/overview.md
+    - System Diagrams: architecture/system-diagrams.md
+    - Technical Specifications: architecture/technical-specifications.md
     - Agent System: architecture/agent-system.md
     - Security: architecture/security.md
   - API:
