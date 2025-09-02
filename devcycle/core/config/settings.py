@@ -153,13 +153,98 @@ class APIConfig(BaseSettings):
     port: int = Field(default=8000, description="API server port")
     workers: int = Field(default=1, description="Number of API workers")
     reload: bool = Field(default=True, description="Enable auto-reload in development")
-    cors_origins: List[str] = Field(default=["*"], description="Allowed CORS origins")
+    cors_origins: List[str] = Field(
+        default_factory=list, description="Allowed CORS origins"
+    )
     cors_credentials: bool = Field(default=True, description="Allow CORS credentials")
-    cors_methods: List[str] = Field(default=["*"], description="Allowed CORS methods")
-    cors_headers: List[str] = Field(default=["*"], description="Allowed CORS headers")
+    cors_methods: List[str] = Field(
+        default_factory=list, description="Allowed CORS methods"
+    )
+    cors_headers: List[str] = Field(
+        default_factory=list, description="Allowed CORS headers"
+    )
+    cors_expose_headers: List[str] = Field(
+        default_factory=list, description="Exposed CORS headers"
+    )
+    cors_max_age: int = Field(
+        default=600, description="CORS preflight cache time in seconds"
+    )
     request_timeout: int = Field(default=30, description="Request timeout in seconds")
 
     model_config = SettingsConfigDict(env_prefix="API_")
+
+    def cors_origins_resolved(self, environment: str = "development") -> List[str]:
+        """Get CORS origins based on environment."""
+        if self.cors_origins:
+            return self.cors_origins
+
+        # Default environment-specific origins
+        if environment == "development":
+            return [
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://localhost:8080",
+                "http://127.0.0.1:8080",
+                "http://localhost:8000",
+                "http://127.0.0.1:8000",
+            ]
+        elif environment == "staging":
+            return [
+                "https://staging.yourdomain.com",
+                "https://staging-app.yourdomain.com",
+            ]
+        elif environment == "production":
+            return [
+                "https://yourdomain.com",
+                "https://app.yourdomain.com",
+            ]
+        else:
+            return []
+
+    def cors_credentials_resolved(self, environment: str = "development") -> bool:
+        """Get CORS credentials setting based on environment."""
+        # More restrictive in production
+        if environment == "production":
+            return False
+        return self.cors_credentials
+
+    def cors_methods_resolved(self, environment: str = "development") -> List[str]:
+        """Get CORS methods based on environment."""
+        if self.cors_methods:
+            return self.cors_methods
+
+        if environment == "production":
+            return ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+        else:
+            return ["*"]  # More permissive in development
+
+    @property
+    def cors_headers_resolved(self) -> List[str]:
+        """Get CORS headers based on environment."""
+        if self.cors_headers:
+            return self.cors_headers
+
+        return [
+            "Accept",
+            "Accept-Language",
+            "Content-Language",
+            "Content-Type",
+            "Authorization",
+            "X-CSRF-Token",
+            "X-Requested-With",
+        ]
+
+    @property
+    def cors_expose_headers_resolved(self) -> List[str]:
+        """Get exposed CORS headers."""
+        if self.cors_expose_headers:
+            return self.cors_expose_headers
+
+        return [
+            "Content-Length",
+            "Content-Type",
+            "X-Total-Count",
+        ]
 
 
 class RedisConfig(BaseSettings):
@@ -321,6 +406,79 @@ class DevCycleConfig(BaseSettings):
         if v and info.data.get("environment") == Environment.PRODUCTION:
             raise ValueError("Debug mode cannot be enabled in production")
         return v
+
+    def model_post_init(self, __context: Any) -> None:
+        """Post-initialization validation."""
+        super().model_post_init(__context)
+        self._validate_production_cors_config()
+
+    @property
+    def cors_origins_resolved(self) -> List[str]:
+        """Get resolved CORS origins for this environment."""
+        return self.api.cors_origins_resolved(self.environment.value)
+
+    @property
+    def cors_credentials_resolved(self) -> bool:
+        """Get resolved CORS credentials for this environment."""
+        return self.api.cors_credentials_resolved(self.environment.value)
+
+    @property
+    def cors_methods_resolved(self) -> List[str]:
+        """Get resolved CORS methods for this environment."""
+        return self.api.cors_methods_resolved(self.environment.value)
+
+    @property
+    def cors_headers_resolved(self) -> List[str]:
+        """Get resolved CORS headers for this environment."""
+        return self.api.cors_headers_resolved
+
+    @property
+    def cors_expose_headers_resolved(self) -> List[str]:
+        """Get resolved exposed CORS headers for this environment."""
+        return self.api.cors_expose_headers_resolved
+
+    def _validate_production_cors_config(self) -> None:
+        """Validate production CORS configuration security."""
+        if self.environment == Environment.PRODUCTION:
+            # Only validate explicitly configured CORS origins, not resolved defaults
+            cors_origins = self.api.cors_origins
+
+            # If no origins are explicitly configured, that's an error in production
+            if not cors_origins:
+                raise ValueError(
+                    "Production environment must specify allowed CORS origins. "
+                    "Set API_CORS_ORIGINS environment variable."
+                )
+
+            # Ensure CORS is properly restricted
+            if "*" in cors_origins:
+                raise ValueError(
+                    "Production environment cannot allow all CORS origins (*). "
+                    "Please specify allowed origins explicitly."
+                )
+
+            # Validate CORS origins are HTTPS
+            for origin in cors_origins:
+                if not origin.startswith("https://"):
+                    raise ValueError(
+                        f"Production CORS origin must use HTTPS: {origin}. "
+                        "All production origins must be secure."
+                    )
+
+            # Validate no localhost origins in production
+            for origin in cors_origins:
+                if "localhost" in origin or "127.0.0.1" in origin:
+                    raise ValueError(
+                        f"Production environment cannot allow localhost origins: "
+                        f"{origin}. Use production domain names only."
+                    )
+
+            # Validate credentials setting - use the actual configured value
+            if self.api.cors_credentials:
+                raise ValueError(
+                    "Production environment should not allow CORS credentials. "
+                    "Set API_CORS_CREDENTIALS=false for production."
+                )
 
     def get_agent_config(self, agent_name: str) -> Optional[Dict[str, Any]]:
         """

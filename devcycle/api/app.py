@@ -40,6 +40,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "Permissions-Policy"
         ] = "geolocation=(), microphone=(), camera=()"
 
+        # CORS-specific security headers
+        origin = request.headers.get("origin")
+        if origin:
+            # Only set CORS headers for actual cross-origin requests
+            response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+            response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+            response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
+
         # Remove server information
         if "server" in response.headers:
             del response.headers["server"]
@@ -222,13 +230,15 @@ def _setup_middleware(app: FastAPI, config: Any) -> None:
     # Rate limiting middleware for auth endpoints
     app.add_middleware(RateLimitMiddleware, max_requests=10, window_seconds=60)
 
-    # CORS middleware
+    # CORS middleware with environment-specific configuration
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=config.api.cors_origins,
-        allow_credentials=config.api.cors_credentials,
-        allow_methods=config.api.cors_methods,
-        allow_headers=config.api.cors_headers,
+        allow_origins=config.cors_origins_resolved,
+        allow_credentials=config.cors_credentials_resolved,
+        allow_methods=config.cors_methods_resolved,
+        allow_headers=config.cors_headers_resolved,
+        expose_headers=config.cors_expose_headers_resolved,
+        max_age=config.api.cors_max_age,
     )
 
     # Gzip compression middleware
