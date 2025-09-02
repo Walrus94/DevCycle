@@ -8,7 +8,7 @@ the application for improved performance and distributed caching capabilities.
 import json
 from typing import Any, Dict, Optional
 
-import redis  # type: ignore[import-untyped]
+import redis
 
 from ..config import get_config
 from ..logging import get_logger

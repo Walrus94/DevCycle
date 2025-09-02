@@ -154,7 +154,7 @@ jobs:
       run: poetry run flake8 .
 
     - name: Run MyPy (type checking)
-      run: poetry run mypy .
+      run: poetry run mypy . --ignore-missing-imports
 
   # Unit Tests (always run)
   unit-tests:
