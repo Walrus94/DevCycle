@@ -228,7 +228,7 @@ $RECYCLE.BIN/
 
 # Hugging Face
 .cache/
-huggingface/
+.cache/huggingface/
 
 # Logs
 logs/
