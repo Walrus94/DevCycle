@@ -303,7 +303,10 @@ def async_client(test_db_session, test_app) -> AsyncClient:
 
 @pytest.fixture
 def client(async_client) -> AsyncClient:
-    """Create a sync test client (alias for async_client for compatibility)."""
+    """Create a test client.
+
+    This is an alias for async_client for compatibility.
+    """
     return async_client
 
 

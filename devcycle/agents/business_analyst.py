@@ -24,6 +24,7 @@ class Requirement:
     dependencies: Optional[List[str]] = None
 
     def __post_init__(self) -> None:
+        """Initialize the requirement after creation."""
         if self.acceptance_criteria is None:
             self.acceptance_criteria = []
         if self.dependencies is None:

@@ -19,7 +19,7 @@ from devcycle.core.protocols.message import MessageStatus, create_event
 
 
 async def main() -> None:
-    """Main demonstration function."""
+    """Run the main demonstration function."""
     print("Starting Kafka messaging demonstration...")
 
     # Create configuration for Kafka backend

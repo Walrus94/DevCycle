@@ -17,6 +17,7 @@ class MockModel:
     """Mock model for testing."""
 
     def __init__(self, id=None, name="test", value=42):
+        """Initialize mock model."""
         self.id = id or uuid4()
         self.name = name
         self.value = value
@@ -26,6 +27,7 @@ class MockRepository(BaseRepository[MockModel]):
     """Mock repository for testing base functionality."""
 
     def __init__(self, session: AsyncSession):
+        """Initialize mock repository."""
         super().__init__(session, MockModel)
 
 

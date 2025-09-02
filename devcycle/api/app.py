@@ -29,6 +29,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Middleware to add security headers to all responses."""
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        """Dispatch request with security headers."""
         response = await call_next(request)
 
         # Security headers
@@ -61,12 +62,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(
         self, app: ASGIApp, max_requests: int = 10, window_seconds: int = 60
     ) -> None:
+        """Initialize rate limiting middleware."""
         super().__init__(app)
         self.max_requests = max_requests
         self.window_seconds = window_seconds
         self.requests: Dict[str, List[float]] = {}
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        """Dispatch request with rate limiting for auth endpoints."""
         logger = get_logger(__name__)
         logger.debug(f"🔍 RateLimitMiddleware processing {request.method} {request.url}")
 
@@ -214,7 +217,7 @@ def create_app(environment: Optional[str] = None) -> FastAPI:
 
 
 def _setup_middleware(app: FastAPI, config: Any) -> None:
-    """Setup application middleware."""
+    """Set up application middleware."""
     # Security headers middleware (add first to ensure headers are set)
     app.add_middleware(SecurityHeadersMiddleware)
 
@@ -268,7 +271,7 @@ def _setup_middleware(app: FastAPI, config: Any) -> None:
 
 
 def _setup_exception_handlers(app: FastAPI) -> None:
-    """Setup exception handlers."""
+    """Set up exception handlers."""
     logger = get_logger("api.exceptions")
 
     @app.exception_handler(RequestValidationError)
@@ -320,7 +323,7 @@ def _setup_exception_handlers(app: FastAPI) -> None:
 
 
 def _setup_routes(app: FastAPI) -> None:
-    """Setup application routes."""
+    """Set up application routes."""
     from fastapi_users import schemas
 
     from ..core.auth.fastapi_users import auth_backend, fastapi_users

@@ -17,10 +17,10 @@ from .database.connection import get_async_session
 from .messaging.middleware import MessageValidator
 from .messaging.validation import MessageValidationConfig
 from .repositories.agent_repository import AgentRepository, AgentTaskRepository
-
-# UserRepository removed - using FastAPI Users SQLAlchemyUserDatabase directly
 from .services.agent_availability_service import AgentAvailabilityService
 from .services.agent_service import AgentService
+
+# UserRepository removed - using FastAPI Users SQLAlchemyUserDatabase directly
 
 # UserService removed - using FastAPI Users directly
 

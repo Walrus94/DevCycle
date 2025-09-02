@@ -31,6 +31,7 @@ class KafkaMessageQueue(MessageQueueInterface):
     """
 
     def __init__(self, config: MessagingConfig):
+        """Initialize Kafka message queue."""
         self.config = config
         self.kafka_config = config.kafka or KafkaConfig()
         self.logger = get_logger(__name__)
@@ -376,7 +377,7 @@ class KafkaMessageQueue(MessageQueueInterface):
             return None
 
     async def _consumer_loop(self) -> None:
-        """Main consumer loop."""
+        """Run the main consumer loop."""
         while self.running:
             try:
                 # Get next message
@@ -399,7 +400,7 @@ class KafkaMessageQueue(MessageQueueInterface):
                 await asyncio.sleep(1)
 
     def _delivery_report(self, err: Any, msg: Any) -> None:
-        """Callback for message delivery reports."""
+        """Handle message delivery report callback."""
         if err is not None:
             self.logger.error(
                 "Message delivery failed",

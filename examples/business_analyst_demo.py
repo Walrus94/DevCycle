@@ -1,5 +1,5 @@
 """
-Business Analyst Agent Demo
+Business Analyst Agent Demo.
 
 This script demonstrates the capabilities of the BusinessAnalystAgent
 by processing various types of business requirements.

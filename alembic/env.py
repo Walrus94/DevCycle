@@ -1,3 +1,4 @@
+"""Alembic environment configuration for DevCycle database migrations."""
 import os
 import sys
 from logging.config import fileConfig

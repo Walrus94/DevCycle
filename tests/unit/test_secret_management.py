@@ -1,6 +1,4 @@
-"""
-Test cases for secure secret management implementation (DOTM-471).
-"""
+"""Test cases for secure secret management implementation (DOTM-471)."""
 
 import os
 from unittest.mock import patch

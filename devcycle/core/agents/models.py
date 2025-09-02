@@ -281,6 +281,7 @@ class Agent(Base):
     )
 
     def __repr__(self) -> str:
+        """Return string representation of the agent."""
         return f"<Agent(id={self.id}, name='{self.name}', type='{self.agent_type}')>"
 
 
@@ -322,6 +323,7 @@ class AgentTask(Base):
     agent: Mapped["Agent"] = relationship("Agent", back_populates="tasks")
 
     def __repr__(self) -> str:
+        """Return string representation of the agent task."""
         return (
             f"<AgentTask(id={self.id}, type='{self.task_type}', "
             f"status='{self.status}')>"

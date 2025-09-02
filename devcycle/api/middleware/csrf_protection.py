@@ -18,6 +18,7 @@ class CSRFProtectionMiddleware(BaseHTTPMiddleware):
     """CSRF protection middleware for state-changing operations."""
 
     def __init__(self, app: Starlette, secret_key: str) -> None:
+        """Initialize CSRF protection middleware."""
         super().__init__(app)
         self.secret_key = secret_key
         self.csrf_tokens: Dict[str, float] = {}  # token -> timestamp
@@ -25,7 +26,6 @@ class CSRFProtectionMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Callable) -> JSONResponse:
         """Process request and check CSRF token for state-changing operations."""
-
         # Skip CSRF check for safe methods
         if request.method in ["GET", "HEAD", "OPTIONS"]:
             response = await call_next(request)

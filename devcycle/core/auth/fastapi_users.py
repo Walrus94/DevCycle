@@ -25,6 +25,7 @@ class UserManager(BaseUserManager[User, UUID]):
     """User manager for FastAPI Users."""
 
     def __init__(self, user_db: Any) -> None:
+        """Initialize the user manager."""
         super().__init__(user_db)
         self.logger = get_logger(__name__)
         config = get_config()

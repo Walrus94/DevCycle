@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DevCycle API Client Demo
+DevCycle API Client Demo.
 
 This script demonstrates how to interact with the DevCycle API using
 the standardized REST endpoints and authentication.
@@ -18,6 +18,7 @@ class DevCycleAPIClient:
     """Client for interacting with the DevCycle API."""
 
     def __init__(self, base_url: str = "http://localhost:8000"):
+        """Initialize the API client."""
         self.base_url = base_url.rstrip("/")
         self.api_base = f"{self.base_url}/api/v1"
         self.token: Optional[str] = None

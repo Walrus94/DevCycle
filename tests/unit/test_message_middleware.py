@@ -190,8 +190,7 @@ class TestMessageValidationMiddleware:
     async def test_middleware_structure_validation_send_missing_fields(
         self, middleware, mock_request, mock_call_next
     ):
-        """Test middleware structure validation
-        for send endpoint with missing fields."""
+        """Test middleware structure validation for send endpoint missing fields."""
         invalid_data = {"action": "test_action"}  # Missing agent_id
         mock_request.body = AsyncMock(return_value=json.dumps(invalid_data).encode())
 

@@ -1,5 +1,5 @@
 """
-DevCycle - AI-Powered Application Development Lifecycle Automation System
+DevCycle - AI-Powered Application Development Lifecycle Automation System.
 
 A Proof of Concept (POC) that leverages multiple specialized AI agents to streamline
 software development processes through Hugging Face Spaces integration.

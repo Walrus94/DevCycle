@@ -22,6 +22,7 @@ class ExampleLogger:
     """
 
     def __init__(self, name: str, enable_console: bool = True):
+        """Initialize the example logger."""
         self.name = name
         self.enable_console = enable_console
         self.structured_logger = get_logger(name)
@@ -158,7 +159,7 @@ def get_example_logger(name: str, enable_console: bool = True) -> ExampleLogger:
 
 def setup_example_logging(level: str = "INFO", enable_console: bool = True) -> None:
     """
-    Setup logging for examples.
+    Set up logging for examples.
 
     Args:
         level: Logging level

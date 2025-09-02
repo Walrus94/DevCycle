@@ -28,7 +28,7 @@ router = APIRouter()
 )
 async def health_check() -> HealthResponse:
     """
-    Basic health check endpoint.
+    Perform basic health check.
 
     This endpoint provides a simple health check that returns the current
     status of the API service. It's designed to be lightweight and fast,

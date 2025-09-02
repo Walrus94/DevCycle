@@ -39,11 +39,11 @@ class MockAgentWithError(BaseAgent):
     """Test agent that raises errors for testing error handling."""
 
     async def process(self, input_data, **kwargs):
-        """Always raise an error."""
+        """Raise an error for testing purposes."""
         raise ValueError("Test error for error handling")
 
     def validate_input(self, input_data):
-        """Always return True to test process error handling."""
+        """Return True to test process error handling."""
         return True
 
 
@@ -51,11 +51,11 @@ class MockAgentWithValidationError(BaseAgent):
     """Test agent that fails validation."""
 
     async def process(self, input_data, **kwargs):
-        """This should never be called due to validation failure."""
+        """Return result that should never be reached due to validation failure."""
         return AgentResult(success=True, data="Should not reach here")
 
     def validate_input(self, input_data):
-        """Always fail validation."""
+        """Fail validation for testing purposes."""
         return False
 
 

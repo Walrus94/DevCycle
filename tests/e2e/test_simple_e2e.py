@@ -1,6 +1,4 @@
-"""
-Simple end-to-end test to verify basic functionality.
-"""
+"""Simple end-to-end test to verify basic functionality."""
 
 import pytest
 from httpx import AsyncClient

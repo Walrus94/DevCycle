@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DevCycle API Client Demo with Proper Logging
+DevCycle API Client Demo with Proper Logging.
 
 This script demonstrates how to interact with the DevCycle API using
 the standardized REST endpoints and authentication with proper structured logging.
@@ -17,6 +17,7 @@ class DevCycleAPIClient:
     """Client for interacting with the DevCycle API."""
 
     def __init__(self, base_url: str = "http://localhost:8000"):
+        """Initialize the API client."""
         self.base_url = base_url.rstrip("/")
         self.api_base = f"{self.base_url}/api/v1"
         self.token: Optional[str] = None
@@ -273,7 +274,7 @@ async def demo_error_handling() -> None:
 
 
 async def main() -> None:
-    """Main demo function."""
+    """Run the main demo function."""
     setup_example_logging()
     logger = get_example_logger(__name__)
 

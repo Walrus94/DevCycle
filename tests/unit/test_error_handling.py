@@ -1,6 +1,4 @@
-"""
-Tests for the error handling and retry mechanisms.
-"""
+"""Tests for the error handling and retry mechanisms."""
 
 from datetime import datetime, timedelta, timezone
 

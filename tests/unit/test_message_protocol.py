@@ -1,6 +1,4 @@
-"""
-Tests for the message protocol implementation.
-"""
+"""Tests for the message protocol implementation."""
 
 import pytest
 

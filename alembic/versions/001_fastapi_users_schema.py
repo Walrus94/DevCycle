@@ -1,4 +1,4 @@
-"""Complete DevCycle database schema - consolidated migration
+"""Complete DevCycle database schema - consolidated migration.
 
 Revision ID: 001
 Revises:
@@ -18,6 +18,7 @@ depends_on = None
 
 
 def upgrade() -> None:
+    """Upgrade database schema."""
     # Create user table (FastAPI Users base table) with all fields
     op.create_table(
         "user",
@@ -125,6 +126,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    """Downgrade database schema."""
     # Drop tables in reverse order
     op.drop_table("agent_tasks")
     op.drop_table("agents")
