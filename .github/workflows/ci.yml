@@ -358,8 +358,8 @@ jobs:
     - name: Install dependencies
       run: poetry install --no-interaction
 
-    - name: Run safety check
-      run: poetry run safety check
+    - name: Run pip-audit security scan
+      run: poetry run pip-audit
 
     - name: Run bandit security scan
       run: poetry run bandit -r devcycle/ -f json -o bandit-report.json || true
