@@ -82,7 +82,9 @@ class TestSecretManagement:
         """Test that production environment requires explicit secret."""
         from pydantic import ValidationError
 
-        with pytest.raises(ValidationError, match="Input should be a valid string"):
+        with pytest.raises(
+            ValidationError, match="Secret key must be at least 32 characters long"
+        ):
             SecurityConfig()
 
     @patch.dict(os.environ, {"ENVIRONMENT": "production"})
@@ -98,7 +100,9 @@ class TestSecretManagement:
         """Test that testing environment requires explicit secret."""
         from pydantic import ValidationError
 
-        with pytest.raises(ValidationError, match="Input should be a valid string"):
+        with pytest.raises(
+            ValidationError, match="Secret key must be at least 32 characters long"
+        ):
             SecurityConfig()
 
     def test_secret_key_validation_case_insensitive(self):

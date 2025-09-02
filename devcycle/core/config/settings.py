@@ -100,9 +100,9 @@ class SecurityConfig(BaseSettings):
     """Configuration for security settings."""
 
     secret_key: str = Field(
-        default_factory=lambda: generate_secure_secret()
+        default_factory=lambda: generate_secure_secret() or "your-secret-key-here"
         if os.getenv("ENVIRONMENT", "development") == "development"
-        else None,
+        else os.getenv("SECRET_KEY", "your-secret-key-here"),
         description="Secret key for JWT tokens (required in production)",
     )
     algorithm: str = Field(default="HS256", description="JWT algorithm")
