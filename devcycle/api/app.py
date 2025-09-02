@@ -21,6 +21,7 @@ from starlette.types import ASGIApp
 
 from ..core.config import get_config
 from ..core.logging import get_logger
+from .middleware.csrf_protection import CSRFProtectionMiddleware
 from .versioning import get_version_info
 
 
@@ -58,8 +59,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.requests: Dict[str, List[float]] = {}
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        logger = get_logger(__name__)
+        logger.debug(f"🔍 RateLimitMiddleware processing {request.method} {request.url}")
+
         # Only apply rate limiting to auth endpoints
         if request.url.path.startswith("/api/v1/auth"):
+            logger.debug("🔍 Auth endpoint detected, applying rate limiting...")
             client_ip = request.client.host if request.client else "unknown"
             current_time = time.time()
 
@@ -83,6 +88,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
             # Check rate limit
             if len(self.requests[client_ip]) >= self.max_requests:
+                logger.warning(f"❌ Rate limit exceeded for {client_ip}")
                 return JSONResponse(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                     content={
@@ -96,8 +102,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
             # Record request
             self.requests[client_ip].append(current_time)
+            logger.debug(f"✅ Rate limit check passed for {client_ip}")
+        else:
+            logger.debug("✅ Non-auth endpoint, skipping rate limiting")
 
+        logger.debug("🔍 RateLimitMiddleware calling next middleware...")
         response = await call_next(request)
+        logger.debug(
+            f"✅ RateLimitMiddleware completed, response status: {response.status_code}"
+        )
         return response
 
 
@@ -197,7 +210,17 @@ def _setup_middleware(app: FastAPI, config: Any) -> None:
     # Security headers middleware (add first to ensure headers are set)
     app.add_middleware(SecurityHeadersMiddleware)
 
+    # XSS Protection middleware - REMOVED: Using FastAPI built-in validation instead
+    # app.add_middleware(XSSProtectionMiddleware, strict_mode=True)
+
+    # CSRF Protection middleware (only in production)
+    if config.environment == "production":
+        app.add_middleware(
+            CSRFProtectionMiddleware, secret_key=config.security.secret_key
+        )
+
     # Rate limiting middleware for auth endpoints
+    app.add_middleware(RateLimitMiddleware, max_requests=10, window_seconds=60)
 
     # CORS middleware
     app.add_middleware(
@@ -223,7 +246,9 @@ def _setup_middleware(app: FastAPI, config: Any) -> None:
             f"from {request.client.host if request.client else 'unknown'}"
         )
 
+        logger.debug("🔍 LoggingMiddleware calling next middleware...")
         response = await call_next(request)
+        logger.debug(f"✅ LoggingMiddleware received response: {response.status_code}")
 
         # Log response
         process_time = time.time() - start_time
