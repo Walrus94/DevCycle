@@ -77,6 +77,33 @@ services:
     networks:
       - default
 
+  # Redis Cache (for session management and token blacklisting)
+  redis:
+    image: redis:7-alpine
+    container_name: devcycle-redis
+    restart: unless-stopped
+    ports:
+      - "${DOCKER_REDIS_PORT:-6379}:6379"
+    environment:
+      REDIS_PASSWORD: ${DOCKER_REDIS_PASSWORD:-}
+    command: >
+      sh -c "
+        if [ -n \"$$REDIS_PASSWORD\" ]; then
+          redis-server --requirepass $$REDIS_PASSWORD --appendonly yes
+        else
+          redis-server --appendonly yes
+        fi
+      "
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - default
+
   # pgAdmin (Optional - for database management)
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -100,6 +127,8 @@ volumes:
   kafka-data:
     driver: local
   postgres-data:
+    driver: local
+  redis-data:
     driver: local
   pgadmin-data:
     driver: local

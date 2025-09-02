@@ -14,6 +14,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from testcontainers.postgres import PostgresContainer  # type: ignore
+from testcontainers.redis import RedisContainer  # type: ignore
 
 from devcycle.core.dependencies import get_async_session
 
@@ -22,14 +23,24 @@ app = None
 
 
 @pytest.fixture(scope="session")
-def test_app():
+def test_app(test_redis_url):
     """Create the test app with the test environment."""
     print("🏗️  Creating test application...")
     global app
     try:
+        import os
+
         from devcycle.api.app import create_app
 
         print("📱 Creating app with testing environment...")
+
+        # Set Redis environment variables for testing
+        redis_host, redis_port = test_redis_url.replace("redis://", "").split(":")
+        os.environ["REDIS_HOST"] = redis_host
+        os.environ["REDIS_PORT"] = redis_port
+        os.environ["REDIS_PASSWORD"] = ""  # No password for test Redis
+        os.environ["REDIS_DB"] = "0"
+
         app = create_app(environment="testing")
         print("✅ Test application created successfully")
         return app
@@ -57,6 +68,27 @@ def postgres_container():
 
 
 @pytest.fixture(scope="session")
+def redis_container():
+    """Create a Redis container for testing."""
+    print("🔧 Starting Redis container setup...")
+    try:
+        print("📦 Creating RedisContainer with redis:7-alpine...")
+        with RedisContainer("redis:7-alpine") as redis:
+            print("⏳ Waiting for Redis container to be ready...")
+            # Wait for the container to be ready
+            # RedisContainer doesn't have get_connection_url(), so we construct it
+            host = redis.get_container_host_ip()
+            port = redis.get_exposed_port(6379)
+            connection_url = f"redis://{host}:{port}"
+            print(f"✅ Redis container ready! Connection URL: {connection_url}")
+            yield redis
+            print("🧹 Cleaning up Redis container...")
+    except Exception as e:
+        print(f"❌ Error setting up Redis container: {e}")
+        raise
+
+
+@pytest.fixture(scope="session")
 def test_db_url(postgres_container):
     """Get the test database URL from the container."""
     print("🔗 Getting test database URL...")
@@ -76,6 +108,18 @@ def test_db_url(postgres_container):
 
     print(f"🔄 Async URL: {async_url}")
     return async_url
+
+
+@pytest.fixture(scope="session")
+def test_redis_url(redis_container):
+    """Get the test Redis URL from the container."""
+    print("🔗 Getting test Redis URL...")
+    # RedisContainer doesn't have get_connection_url(), so we construct it manually
+    host = redis_container.get_container_host_ip()
+    port = redis_container.get_exposed_port(6379)
+    redis_url = f"redis://{host}:{port}"
+    print(f"📡 Redis URL: {redis_url}")
+    return redis_url
 
 
 @pytest.fixture(scope="session")
