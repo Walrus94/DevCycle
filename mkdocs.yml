@@ -1,0 +1,125 @@
+site_name: DevCycle Documentation
+site_description: AI-Powered Application Development Lifecycle Automation System
+site_author: DevCycle Team
+site_url: https://devcycle.dev
+
+# Repository
+repo_name: devcycle/devcycle
+repo_url: https://github.com/devcycle/devcycle
+edit_uri: edit/main/docs/
+
+# Configuration
+theme:
+  name: material
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - search.highlight
+    - search.share
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+    - toc.integrate
+
+  icon:
+    repo: fontawesome/brands/github
+
+# Plugins
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
+
+# Markdown extensions
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets
+  - pymdownx.emoji:
+      emoji_index: emoji
+
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+# Navigation
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Quick Start: getting-started/quick-start.md
+    - Installation: getting-started/installation.md
+    - Project Structure: getting-started/project-structure.md
+    - Development Setup: getting-started/development-setup.md
+  - Architecture:
+    - Overview: architecture/overview.md
+    - System Diagrams: architecture/system-diagrams.md
+    - Technical Specifications: architecture/technical-specifications.md
+    - Agent System: architecture/agent-system.md
+    - Security: architecture/security.md
+  - API:
+    - Overview: api/overview.md
+    - Authentication: api/authentication.md
+    - Endpoints: api/endpoints.md
+    - Testing: api/testing.md
+  - Development:
+    - Guidelines: development/guidelines.md
+    - Standards: development/standards.md
+    - Workflows: development/workflows.md
+  - Operations:
+    - Configuration: operations/configuration.md
+    - Database: operations/database.md
+    - Kafka: operations/kafka.md
+    - Monitoring: operations/monitoring.md
+  - Contributing:
+    - Contributing Guide: contributing/contributing.md
+    - Code of Conduct: contributing/code-of-conduct.md
+
+# Extra
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/devcycle/devcycle
+    - icon: fontawesome/brands/docker
+      link: https://hub.docker.com/r/devcycle/devcycle
+  version:
+    provider: mike
