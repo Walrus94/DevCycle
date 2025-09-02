@@ -1,6 +1,16 @@
 # API Overview
 
-The DevCycle API provides a RESTful interface for managing AI agents, handling messages, and monitoring system health. The API is built with FastAPI and automatically generates interactive documentation.
+The DevCycle API provides a comprehensive RESTful interface for managing AI agents, handling inter-agent communication, and monitoring system health. Built with FastAPI, the API offers automatic OpenAPI documentation generation, robust authentication, and extensive agent lifecycle management capabilities.
+
+## Key Features
+
+- **Agent Management**: Complete lifecycle management from registration to deployment
+- **Message Routing**: Intelligent message routing between agents with load balancing
+- **Health Monitoring**: Comprehensive health checks and system monitoring
+- **Authentication**: Secure JWT-based authentication with role-based access control
+- **Versioning**: API versioning with backward compatibility
+- **Rate Limiting**: Built-in rate limiting for security and performance
+- **Interactive Documentation**: Auto-generated Swagger UI and ReDoc documentation
 
 ## Accessing Documentation
 
@@ -226,7 +236,8 @@ curl -X GET "http://localhost:8000/api/v1/agents" \
 
 ## Next Steps
 
-- **[Authentication Guide](authentication.md)** - Detailed authentication setup
-- **[Endpoints Reference](endpoints.md)** - Complete endpoint documentation
-- **[SDK Documentation](sdk.md)** - Client library documentation
-- **[Testing Guide](testing.md)** - API testing best practices
+- **[Authentication Guide](authentication.md)** - Detailed authentication setup and security
+- **[Endpoints Reference](endpoints.md)** - Complete endpoint documentation with examples
+- **[Testing Guide](testing.md)** - Comprehensive API testing guide
+- **[Architecture Overview](../architecture/overview.md)** - System architecture and design
+- **[Getting Started Guide](../getting-started/quick-start.md)** - Set up your development environment
