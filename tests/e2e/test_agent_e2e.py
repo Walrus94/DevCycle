@@ -21,7 +21,9 @@ class TestAgentE2E:
             "name": "test_e2e_agent",
             "agent_type": "business_analyst",
             "version": "1.0.0",
-            "capabilities": ["analysis"],
+            "capabilities": '["analysis"]',
+            "configuration": '{"max_tasks": "5"}',
+            "metadata_json": '{"test": "true"}',
             "description": "Test agent for e2e testing",
         }
 

@@ -93,12 +93,13 @@ class RedisCache:
             else:
                 serialized_value = json.dumps(value)
 
+            redis_result: bool | None
             if ttl is not None:
-                result = self.redis_client.setex(full_key, ttl, serialized_value)
+                redis_result = self.redis_client.setex(full_key, ttl, serialized_value)
             else:
-                result = self.redis_client.set(full_key, serialized_value)
+                redis_result = self.redis_client.set(full_key, serialized_value)
 
-            return result is not None and bool(result)
+            return redis_result is not None and bool(redis_result)
 
         except Exception as e:
             logger.error(f"Error setting cache value for key {key}: {e}")

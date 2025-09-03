@@ -6,17 +6,12 @@ for integration and e2e tests. This is much better than the Docker setup
 as it provides better isolation and automatic cleanup.
 """
 
-from typing import AsyncGenerator
-
 import pytest
 from httpx import AsyncClient
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
 from testcontainers.postgres import PostgresContainer  # type: ignore
 from testcontainers.redis import RedisContainer  # type: ignore
-
-from devcycle.core.dependencies import get_async_session
+from tortoise import Tortoise
+from tortoise.transactions import in_transaction
 
 # We'll create the app with proper configuration
 app = None
@@ -123,177 +118,72 @@ def test_redis_url(redis_container):
 
 
 @pytest.fixture(scope="session")
-async def test_db_engine(test_db_url):
-    """Create a test database engine using testcontainers."""
-    print("🚀 Creating test database engine...")
+async def test_tortoise_config(test_db_url):
+    """Create a test Tortoise ORM configuration."""
+    print("🚀 Creating test Tortoise ORM configuration...")
     try:
-        engine = create_async_engine(test_db_url, echo=False)
-        print("✅ Engine created successfully")
+        # Convert asyncpg URL to tortoise format
+        # Tortoise expects postgres:// not postgresql://
+        tortoise_url = test_db_url.replace("postgresql+asyncpg://", "postgres://")
 
-        # Test connection
-        print("🔍 Testing database connection...")
-        async with engine.begin() as conn:
-            await conn.execute(text("SELECT 1"))
-        print("✅ Database connection test successful")
+        tortoise_config = {
+            "connections": {"default": tortoise_url},
+            "apps": {
+                "models": {
+                    "models": [
+                        "devcycle.core.models.tortoise_models",
+                        "devcycle.core.auth.tortoise_models",
+                        "aerich.models",
+                    ],
+                    "default_connection": "default",
+                },
+            },
+        }
 
-        # Run database migrations to set up schema
-        print("📋 Running database migrations...")
-        await run_database_migrations(engine)
-        print("✅ Database migrations completed")
-
-        yield engine
-        print("🧹 Disposing database engine...")
-        await engine.dispose()
-        print("✅ Database engine disposed")
+        print("✅ Tortoise configuration created successfully")
+        return tortoise_config
     except Exception as e:
-        print(f"❌ Error with database engine: {e}")
+        print(f"❌ Error creating Tortoise configuration: {e}")
         raise
 
 
-async def run_database_migrations(engine):
-    """Set up the database schema directly using SQLAlchemy."""
-    from sqlalchemy import text
+@pytest.fixture(scope="session")
+async def test_tortoise_init(test_tortoise_config):
+    """Initialize Tortoise ORM for testing."""
+    print("🚀 Initializing Tortoise ORM...")
+    try:
+        await Tortoise.init(config=test_tortoise_config)
+        print("✅ Tortoise ORM initialized successfully")
 
-    print("🏗️  Setting up database schema...")
-    # Create the database schema directly
-    async with engine.begin() as conn:
-        # Create user table (FastAPI Users base table)
-        await conn.execute(
-            text(
-                """
-            CREATE TABLE IF NOT EXISTS "user" (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                email VARCHAR(320) NOT NULL UNIQUE,
-                hashed_password VARCHAR(1024) NOT NULL,
-                is_active BOOLEAN NOT NULL DEFAULT true,
-                is_superuser BOOLEAN NOT NULL DEFAULT false,
-                is_verified BOOLEAN NOT NULL DEFAULT false,
-                first_name VARCHAR(100),
-                last_name VARCHAR(100),
-                role VARCHAR(50) NOT NULL DEFAULT 'user',
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-            )
-        """
-            )
-        )
+        # Generate database schema
+        print("📋 Generating database schema...")
+        await Tortoise.generate_schemas()
+        print("✅ Database schema generated")
 
-        # Create agents table
-        await conn.execute(
-            text(
-                """
-            CREATE TABLE IF NOT EXISTS agents (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                name VARCHAR(100) NOT NULL UNIQUE,
-                agent_type VARCHAR(50) NOT NULL,
-                description TEXT,
-                version VARCHAR(20) NOT NULL,
-                capabilities TEXT NOT NULL,
-                configuration TEXT NOT NULL,
-                metadata_json TEXT NOT NULL,
-                status VARCHAR(20) NOT NULL DEFAULT 'offline',
-                is_active BOOLEAN NOT NULL DEFAULT true,
-                last_heartbeat TIMESTAMP WITH TIME ZONE,
-                response_time_ms INTEGER,
-                error_count INTEGER NOT NULL DEFAULT 0,
-                last_error TEXT,
-                uptime_seconds INTEGER NOT NULL DEFAULT 0,
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                last_seen TIMESTAMP WITH TIME ZONE
-            )
-        """
-            )
-        )
+        yield
 
-        # Create agent_tasks table
-        await conn.execute(
-            text(
-                """
-            CREATE TABLE IF NOT EXISTS agent_tasks (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
-                task_type VARCHAR(100) NOT NULL,
-                status VARCHAR(50) NOT NULL,
-                parameters TEXT NOT NULL,
-                result TEXT,
-                error TEXT,
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                started_at TIMESTAMP WITH TIME ZONE,
-                completed_at TIMESTAMP WITH TIME ZONE
-            )
-        """
-            )
-        )
-
-        # Create agent_health table
-        await conn.execute(
-            text(
-                """
-            CREATE TABLE IF NOT EXISTS agent_health (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
-                status VARCHAR(50) NOT NULL,
-                last_heartbeat TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                health_data JSONB DEFAULT '{}',
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-            )
-        """
-            )
-        )
-
-        # Create alembic_version table for future migrations
-        await conn.execute(
-            text(
-                """
-            CREATE TABLE IF NOT EXISTS alembic_version (
-                version_num VARCHAR(32) NOT NULL,
-                CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
-            )
-        """
-            )
-        )
-
-        # Insert the current migration version
-        await conn.execute(
-            text(
-                """
-            INSERT INTO alembic_version (version_num)
-            VALUES ('001')
-            ON CONFLICT (version_num) DO NOTHING
-        """
-            )
-        )
-
-        print("✅ Database schema initialized successfully")
+        print("🧹 Closing Tortoise ORM connections...")
+        await Tortoise.close_connections()
+        print("✅ Tortoise ORM connections closed")
+    except Exception as e:
+        print(f"❌ Error with Tortoise ORM: {e}")
+        raise
 
 
 @pytest.fixture
-async def test_db_session(test_db_engine) -> AsyncGenerator[AsyncSession, None]:
-    """Create a test database session."""
-    print("🔧 Creating test database session...")
-    async_session = sessionmaker(
-        test_db_engine, class_=AsyncSession, expire_on_commit=False
-    )
-
-    async with async_session() as session:
-        print("✅ Test database session created")
-        yield session
-        print("🧹 Test database session closed")
+async def test_db_transaction(test_tortoise_init):
+    """Create a test database transaction."""
+    print("🔧 Creating test database transaction...")
+    async with in_transaction() as connection:
+        print("✅ Test database transaction created")
+        yield connection
+        print("🧹 Test database transaction closed")
 
 
 @pytest.fixture
-def async_client(test_db_session, test_app) -> AsyncClient:
+def async_client(test_tortoise_init, test_app) -> AsyncClient:
     """Create an async test client."""
     print("🌐 Creating async test client...")
-
-    # Override the database dependency
-    async def override_get_async_session():
-        yield test_db_session
-
-    test_app.dependency_overrides[get_async_session] = override_get_async_session
 
     client = AsyncClient(app=test_app, base_url="http://test")
     print("✅ Async test client created")
@@ -311,42 +201,32 @@ def client(async_client) -> AsyncClient:
 
 
 @pytest.fixture
-async def authenticated_client(async_client, test_db_session) -> AsyncClient:
+async def authenticated_client(async_client, test_tortoise_init) -> AsyncClient:
     """Create an authenticated test client with a test user."""
     print("🔐 Creating authenticated test client...")
     from passlib.context import CryptContext
-    from sqlalchemy import text
+
+    from devcycle.core.auth.tortoise_models import User
 
     try:
         # Create password context for hashing
         print("🔑 Creating password context...")
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-        # Create a test user directly in the database
+        # Create a test user using Tortoise ORM
         print("👤 Creating test user...")
         hashed_password = pwd_context.hash("TestPass123!")
 
-        # Insert user directly into database
-        print("💾 Inserting test user into database...")
-        await test_db_session.execute(
-            text(
-                """
-                INSERT INTO "user" (email, hashed_password, is_active, is_superuser,
-                                   is_verified, role)
-                VALUES (:email, :hashed_password, :is_active, :is_superuser,
-                       :is_verified, :role)
-            """
-            ),
-            {
-                "email": "testuser@example.com",
-                "hashed_password": hashed_password,
-                "is_active": True,
-                "is_superuser": False,
-                "is_verified": True,
-                "role": "user",
-            },
+        # Create user using Tortoise ORM
+        print("💾 Creating test user with Tortoise ORM...")
+        _ = await User.create(
+            email="testuser@example.com",
+            hashed_password=hashed_password,
+            is_active=True,
+            is_superuser=False,
+            is_verified=True,
+            role="user",
         )
-        await test_db_session.commit()
         print("✅ Test user created successfully")
 
         # Login to get token
@@ -403,66 +283,25 @@ async def authenticated_client(async_client, test_db_session) -> AsyncClient:
 
 
 @pytest.fixture(autouse=True)
-async def cleanup_test_data(test_db_session):
+async def cleanup_test_data(test_tortoise_init):
     """Clean up test data after each test."""
     yield
     # Clean up test data after each test
     try:
-        # Check if we're already in a transaction
-        if test_db_session.in_transaction():
-            await test_db_session.rollback()
+        from devcycle.core.auth.tortoise_models import User
+        from devcycle.core.models.tortoise_models import Agent, AgentHealth, AgentTask
 
-        # Clear all tables to ensure test isolation
-        async with test_db_session.begin():
-            # Check if tables exist before trying to delete from them
-            try:
-                # Check if agents table exists
-                result = await test_db_session.execute(
-                    text(
-                        "SELECT EXISTS (SELECT FROM information_schema.tables "
-                        "WHERE table_name = 'agents')"
-                    )
-                )
-                agents_exists = result.scalar()
+        # Clear all test data using Tortoise ORM
+        print("🧹 Cleaning up test data...")
 
-                if agents_exists:
-                    await test_db_session.execute(text("DELETE FROM agents"))
+        # Delete all records from all tables
+        await AgentHealth.all().delete()
+        await AgentTask.all().delete()
+        await Agent.all().delete()
+        await User.all().delete()
 
-                # Check if users table exists
-                result = await test_db_session.execute(
-                    text(
-                        "SELECT EXISTS (SELECT FROM information_schema.tables "
-                        "WHERE table_name = 'users')"
-                    )
-                )
-                users_exists = result.scalar()
-
-                if users_exists:
-                    await test_db_session.execute(text('DELETE FROM "users"'))
-
-                # Also check for any other tables that might contain test data
-                result = await test_db_session.execute(
-                    text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
-                )
-                tables = [row[0] for row in result.fetchall()]
-
-                for table in tables:
-                    if table not in ["agents", "users"] and not table.startswith(
-                        "alembic_"
-                    ):
-                        # Clear any other tables that might contain test data
-                        # Quote table names to handle reserved keywords
-                        await test_db_session.execute(text(f'DELETE FROM "{table}"'))
-
-                await test_db_session.commit()
-            except Exception as e:
-                # Log but don't fail - tables might not exist yet
-                print(f"Table cleanup warning: {e}")
-                await test_db_session.rollback()
+        print("✅ Test data cleaned up successfully")
     except Exception as e:
         # Log but don't fail the test
         print(f"Cleanup warning: {e}")
-        try:
-            await test_db_session.rollback()
-        except Exception:
-            pass
+        pass

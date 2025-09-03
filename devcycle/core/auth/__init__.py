@@ -12,8 +12,8 @@ from .decorators import (
     require_role,
     require_user,
 )
-from .models import User
 from .password import hash_password, verify_password
+from .tortoise_models import User
 
 __all__ = [
     "User",

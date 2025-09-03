@@ -11,7 +11,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from ...core.auth.fastapi_users import current_active_user
-from ...core.auth.models import User
+from ...core.auth.tortoise_models import User
 from ...core.dependencies import get_agent_availability_service, get_message_validator
 from ...core.messaging.middleware import MessageValidator
 from ...core.messaging.responses import (

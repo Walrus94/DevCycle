@@ -15,9 +15,9 @@ from fastapi_users import schemas
 from pydantic import BaseModel, ConfigDict, Field
 
 from ...core.auth.fastapi_users import auth_backend, current_active_user, fastapi_users
-from ...core.auth.models import User
 from ...core.auth.session_monitor import SessionMonitor
 from ...core.auth.token_blacklist import TokenBlacklist
+from ...core.auth.tortoise_models import User
 from ...core.logging import get_logger
 
 router = APIRouter(prefix="/auth", tags=["authentication"])

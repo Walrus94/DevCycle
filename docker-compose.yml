@@ -39,21 +39,6 @@ services:
       timeout: 10s
       retries: 5
 
-  # Kafka UI (Optional - for development/debugging)
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: devcycle-kafka-ui
-    depends_on:
-      kafka:
-        condition: service_healthy
-    ports:
-      - "8080:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: devcycle-local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
-    profiles:
-      - dev
-
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
@@ -68,7 +53,6 @@ services:
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DOCKER_POSTGRES_USER:-postgres} -d ${DOCKER_POSTGRES_DB:-devcycle}"]
       interval: 10s
@@ -104,24 +88,39 @@ services:
     networks:
       - default
 
-  # pgAdmin (Optional - for database management)
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: devcycle-pgadmin
-    restart: unless-stopped
+  # DevCycle Application with Auto-Migration
+  app:
+    image: python:3.12-slim
+    container_name: devcycle-app
     depends_on:
       postgres:
         condition: service_healthy
-    ports:
-      - "5050:80"
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${DOCKER_PGADMIN_EMAIL:-admin@devcycle.dev}
-      PGADMIN_DEFAULT_PASSWORD: ${DOCKER_PGADMIN_PASSWORD:-admin123}
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      - ENVIRONMENT=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=devcycle123
+      - DB_DATABASE=devcycle
     volumes:
-      - pgadmin-data:/var/lib/pgadmin
-    profiles:
-      - dev
+      - .:/app
+    working_dir: /app
+    command: >
+      bash -c "
+        apt-get update && apt-get install -y postgresql-client &&
+        pip install poetry &&
+        poetry config virtualenvs.create false &&
+        poetry install --only=main &&
+        echo 'Waiting for database...' &&
+        while ! pg_isready -h postgres -p 5432 -U postgres; do sleep 1; done &&
+        echo 'Database ready, running migrations...' &&
+        poetry run aerich upgrade &&
+        echo 'Starting application...' &&
+        poetry run uvicorn devcycle.api.app:app --host 0.0.0.0 --port 8000 --reload
+      "
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
 
 volumes:
   kafka-data:
@@ -129,8 +128,6 @@ volumes:
   postgres-data:
     driver: local
   redis-data:
-    driver: local
-  pgadmin-data:
     driver: local
 
 networks:

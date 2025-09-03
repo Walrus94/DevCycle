@@ -1,17 +1,11 @@
 """
 Repository layer for DevCycle.
 
-This module provides data access abstractions using the repository pattern
-to separate business logic from data access concerns.
+This module provided data access abstractions using the repository pattern.
+Now using direct Tortoise ORM operations in the service layer.
 """
 
-from .agent_repository import AgentRepository, AgentTaskRepository
-from .base import BaseRepository
+# Repository pattern removed - using direct Tortoise ORM operations
+# This provides cleaner, more maintainable code with better type safety
 
-# UserRepository removed - using FastAPI Users SQLAlchemyUserDatabase directly
-
-__all__ = [
-    "BaseRepository",
-    "AgentRepository",
-    "AgentTaskRepository",
-]
+__all__: list[str] = []

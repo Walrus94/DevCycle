@@ -291,7 +291,7 @@ async def stop_agent_lifecycle(
         )
 
 @router.post("/{agent_id}/lifecycle/maintenance", response_model=AgentResponse)
-async def put_agent_in_maintenance(
+async def put_in_maintenance(
     agent_id: UUID,
     reason: str = "Scheduled maintenance",
     agent_service: AgentService = Depends(get_agent_service)
@@ -326,7 +326,7 @@ async def put_agent_in_maintenance(
         )
 
 @router.post("/{agent_id}/lifecycle/resume", response_model=AgentResponse)
-async def resume_agent_from_maintenance(
+async def resume_from_maintenance(
     agent_id: UUID,
     agent_service: AgentService = Depends(get_agent_service)
 ) -> AgentResponse:
