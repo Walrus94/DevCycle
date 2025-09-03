@@ -8,59 +8,22 @@ using direct instantiation instead of complex factory patterns.
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from .agents.lifecycle import AgentLifecycleService
-from .auth.fastapi_users import current_active_user
-from .auth.models import User
-from .database.connection import get_async_session
+from .auth.tortoise_fastapi_users import current_active_user
+from .auth.tortoise_models import User
 from .messaging.middleware import MessageValidator
 from .messaging.validation import MessageValidationConfig
-from .repositories.agent_repository import AgentRepository, AgentTaskRepository
 from .services.agent_availability_service import AgentAvailabilityService
 from .services.agent_service import AgentService
 
-# UserRepository removed - using FastAPI Users SQLAlchemyUserDatabase directly
+# UserRepository removed - using FastAPI Users TortoiseUserDatabase directly
 
 # UserService removed - using FastAPI Users directly
 
 
-# Repository Dependencies - Direct instantiation
-# UserRepository removed - using FastAPI Users SQLAlchemyUserDatabase directly
-
-
-async def get_agent_repository(
-    session: AsyncSession = Depends(get_async_session),
-) -> AgentRepository:
-    """
-    Get agent repository dependency.
-
-    Args:
-        session: Database session
-
-    Returns:
-        AgentRepository instance
-    """
-    return AgentRepository(session)
-
-
-async def get_agent_task_repository(
-    session: AsyncSession = Depends(get_async_session),
-) -> AgentTaskRepository:
-    """
-    Get agent task repository dependency.
-
-    Args:
-        session: Database session
-
-    Returns:
-        AgentTaskRepository instance
-    """
-    return AgentTaskRepository(session)
-
-
-# Service Dependencies - Direct instantiation with repository dependencies
-# UserService removed - using FastAPI Users directly
+# Service Dependencies - Direct instantiation
+# Repository pattern removed - using direct Tortoise ORM operations
 
 
 async def get_lifecycle_service() -> AgentLifecycleService:
@@ -73,24 +36,14 @@ async def get_lifecycle_service() -> AgentLifecycleService:
     return AgentLifecycleService()
 
 
-async def get_agent_service(
-    agent_repository: AgentRepository = Depends(get_agent_repository),
-    agent_task_repository: AgentTaskRepository = Depends(get_agent_task_repository),
-    lifecycle_service: AgentLifecycleService = Depends(get_lifecycle_service),
-) -> AgentService:
+async def get_agent_service() -> AgentService:
     """
-    Get agent service dependency with lifecycle integration.
-
-    Args:
-        agent_repository: Agent repository instance
-        agent_task_repository: Agent task repository instance
-        lifecycle_service: Lifecycle service instance
+    Get agent service dependency.
 
     Returns:
         AgentService instance
     """
-    service = AgentService(agent_repository, agent_task_repository, lifecycle_service)
-    return service
+    return AgentService()
 
 
 async def get_current_user_id(user: User = Depends(current_active_user)) -> UUID:
@@ -158,15 +111,15 @@ async def get_message_validator() -> MessageValidator:
 
 
 async def get_agent_availability_service(
-    agent_repository: AgentRepository = Depends(get_agent_repository),
+    agent_service: AgentService = Depends(get_agent_service),
 ) -> AgentAvailabilityService:
     """
     Get agent availability service dependency.
 
     Args:
-        agent_repository: Agent repository instance
+        agent_service: Agent service instance
 
     Returns:
         AgentAvailabilityService instance
     """
-    return AgentAvailabilityService(agent_repository)
+    return AgentAvailabilityService(agent_service)

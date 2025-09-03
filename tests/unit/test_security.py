@@ -60,7 +60,7 @@ class TestSecurityFeatures:
         # Test role checking
         from uuid import uuid4
 
-        from devcycle.core.auth.models import User
+        from devcycle.core.auth.tortoise_models import User
 
         # Create mock user objects
         user = User(

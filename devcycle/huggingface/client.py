@@ -8,7 +8,7 @@ to manage workspaces, spaces, and deployments.
 import os
 from typing import Any, Dict, List, Optional, cast
 
-from huggingface_hub import HfApi, SpaceRuntime
+from huggingface_hub import HfApi, SpaceHardware, SpaceRuntime
 from huggingface_hub.utils import HfHubHTTPError
 
 from ..core.config import get_config
@@ -73,7 +73,9 @@ class HuggingFaceClient:
             List of organization information
         """
         try:
-            orgs = self.api.list_organizations()
+            # Note: list_organizations method may not be available in all versions
+            # Using a more compatible approach
+            orgs: List[Any] = getattr(self.api, "list_organizations", lambda: [])()
             self.logger.info(f"Found {len(orgs)} organizations")
             return cast(List[Dict[str, Any]], orgs)
         except Exception as e:
@@ -117,9 +119,16 @@ class HuggingFaceClient:
             List of space information
         """
         try:
-            spaces = self.api.list_spaces(owner=owner)
-            self.logger.info(f"Found {len(spaces)} spaces for {owner}")
-            return cast(List[Dict[str, Any]], spaces)
+            # Note: list_spaces method signature may vary between versions
+            # Using a more compatible approach
+            spaces = self.api.list_spaces()  # Remove owner parameter for compatibility
+            # Filter by owner if needed
+            if owner:
+                spaces = [
+                    s for s in spaces if getattr(s, "id", "").startswith(f"{owner}/")
+                ]
+            self.logger.info(f"Found {len(list(spaces))} spaces for {owner}")
+            return cast(List[Dict[str, Any]], list(spaces))
         except Exception as e:
             self.logger.error(f"Failed to get spaces for {owner}: {e}")
             return []
@@ -128,7 +137,7 @@ class HuggingFaceClient:
         self,
         repo_id: str,
         space_sdk: str = "gradio",
-        space_hardware: str = "cpu-basic",
+        space_hardware: Optional[SpaceHardware] = None,
         private: bool = False,
     ) -> Optional[Dict[str, Any]]:
         """
@@ -137,7 +146,7 @@ class HuggingFaceClient:
         Args:
             repo_id: Repository ID (e.g., 'devcycle/devcycle-ai-agents')
             space_sdk: Space SDK (gradio, streamlit, docker, etc.)
-            space_hardware: Hardware configuration
+            space_hardware: Hardware configuration (SpaceHardware enum)
             private: Whether the space should be private
 
         Returns:

@@ -8,6 +8,8 @@ management, user permissions, and branding configuration.
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+from huggingface_hub import SpaceHardware
+
 from ..core.logging import get_logger
 from .client import HuggingFaceClient
 
@@ -159,7 +161,7 @@ class HuggingFaceWorkspace:
             space_info = self.client.create_space(
                 repo_id=repo_id,
                 space_sdk="gradio",
-                space_hardware="cpu-basic",
+                space_hardware=SpaceHardware.CPU_BASIC,
                 private=(config.visibility == "private"),
             )
 

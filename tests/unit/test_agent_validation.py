@@ -32,7 +32,7 @@ class TestAgentValidation:
                 "description": "A test agent for validation",
                 "version": "1.0.0",
                 "capabilities": [],
-                "configuration": None,
+                "configuration": {},
                 "metadata": {},
             },
         )
@@ -49,7 +49,7 @@ class TestAgentValidation:
                 "description": "Valid description",
                 "version": "1.0.0",
                 "capabilities": [],
-                "configuration": None,
+                "configuration": {},
                 "metadata": {},
             },
         )
@@ -66,7 +66,7 @@ class TestAgentValidation:
                 "description": "<iframe src='javascript:alert(1)'></iframe>",
                 "version": "1.0.0",
                 "capabilities": [],
-                "configuration": None,
+                "configuration": {},
                 "metadata": {},
             },
         )
@@ -83,7 +83,7 @@ class TestAgentValidation:
                 "description": "Valid description",
                 "version": "1.0javascript:",  # XSS pattern that fits length limit
                 "capabilities": [],
-                "configuration": None,
+                "configuration": {},
                 "metadata": {},
             },
         )
@@ -100,7 +100,7 @@ class TestAgentValidation:
                 "description": "Valid description",
                 "version": "1.0.0",
                 "capabilities": [],
-                "configuration": None,
+                "configuration": {},
                 "metadata": {},
             },
         )
@@ -117,7 +117,7 @@ class TestAgentValidation:
                 "description": "Valid description",
                 "version": "1.0.0",
                 "capabilities": [],
-                "configuration": None,
+                "configuration": {},
                 "metadata": {},
             },
         )
@@ -135,7 +135,7 @@ class TestAgentValidation:
                 "description": long_description,
                 "version": "1.0.0",
                 "capabilities": [],
-                "configuration": None,
+                "configuration": {},
                 "metadata": {},
             },
         )
@@ -153,7 +153,7 @@ class TestAgentValidation:
                 "description": "Valid description",
                 "version": long_version,
                 "capabilities": [],
-                "configuration": None,
+                "configuration": {},
                 "metadata": {},
             },
         )

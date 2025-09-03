@@ -13,7 +13,6 @@ import pytest
 from devcycle.core.agents.lifecycle import AgentLifecycleService, AgentLifecycleState
 from devcycle.core.agents.models import (
     AgentCapability,
-    AgentConfiguration,
     AgentRegistration,
     AgentStatus,
     AgentType,
@@ -99,18 +98,21 @@ class TestAgentServiceLifecycleIntegration:
     @pytest.fixture
     def sample_registration(self):
         """Create a sample agent registration."""
+        import uuid
+
+        unique_id = str(uuid.uuid4())[:8]
         return AgentRegistration(
-            name="test_agent",
+            name=f"test_agent_{unique_id}",
             agent_type=AgentType.BUSINESS_ANALYST,
             description="Test agent for integration testing",
             version="1.0.0",
             capabilities=[AgentCapability.ANALYSIS, AgentCapability.TEXT_PROCESSING],
-            configuration=AgentConfiguration(
-                max_concurrent_tasks=3,
-                timeout_seconds=300,
-                retry_attempts=2,
-            ),
-            metadata={"test": True},
+            configuration={
+                "max_concurrent_tasks": "3",
+                "timeout_seconds": "300",
+                "retry_attempts": "2",
+            },
+            metadata={"test": "true"},
         )
 
     @pytest.mark.asyncio
@@ -123,7 +125,7 @@ class TestAgentServiceLifecycleIntegration:
 
         # Verify agent was created
         assert response is not None
-        assert response.name == "test_agent"
+        assert response.name == sample_registration.name
 
         # Verify lifecycle registration
         lifecycle_status = agent_service.get_agent_lifecycle_status(response.id)
@@ -199,7 +201,7 @@ class TestAgentServiceLifecycleIntegration:
         await agent_service.start_agent(agent_id)
 
         # Put in maintenance
-        maintenance_agent = await agent_service.put_agent_in_maintenance(
+        maintenance_agent = await agent_service.put_in_maintenance(
             agent_id, "Scheduled maintenance"
         )
 
@@ -209,7 +211,7 @@ class TestAgentServiceLifecycleIntegration:
         assert lifecycle_status["current_state"] == AgentLifecycleState.MAINTENANCE
 
         # Resume from maintenance
-        resumed_agent = await agent_service.resume_agent_from_maintenance(agent_id)
+        resumed_agent = await agent_service.resume_from_maintenance(agent_id)
 
         # Verify agent resumed
         assert resumed_agent is not None
@@ -235,11 +237,11 @@ class TestAgentServiceLifecycleIntegration:
             agents.append(response)
 
         # Put one agent in maintenance
-        await agent_service.put_agent_in_maintenance(agents[1].id, "Test maintenance")
+        await agent_service.put_in_maintenance(agents[1].id, "Test maintenance")
 
         # Test status queries
         operational_agents = agent_service.get_operational_agents()
-        available_agents = agent_service.get_available_agent_ids()
+        available_agents = agent_service.get_available_agents()
         maintenance_agents = agent_service.get_agents_in_maintenance()
 
         # Verify results
@@ -307,12 +309,12 @@ class TestAgentServiceLifecycleIntegration:
         assert lifecycle_status["current_state"] == AgentLifecycleState.ONLINE
 
         # 4. Put in maintenance
-        await agent_service.put_agent_in_maintenance(agent_id, "Scheduled maintenance")
+        await agent_service.put_in_maintenance(agent_id, "Scheduled maintenance")
         lifecycle_status = agent_service.get_agent_lifecycle_status(agent_id)
         assert lifecycle_status["current_state"] == AgentLifecycleState.MAINTENANCE
 
         # 5. Resume from maintenance
-        await agent_service.resume_agent_from_maintenance(agent_id)
+        await agent_service.resume_from_maintenance(agent_id)
         lifecycle_status = agent_service.get_agent_lifecycle_status(agent_id)
         assert lifecycle_status["current_state"] == AgentLifecycleState.ONLINE
 
@@ -398,8 +400,8 @@ class TestAgentServiceLifecycleIntegration:
             "start_agent",
             "stop_agent",
             "deploy_agent",
-            "put_agent_in_maintenance",
-            "resume_agent_from_maintenance",
+            "put_in_maintenance",
+            "resume_from_maintenance",
         ]
 
         for method_name in lifecycle_methods:

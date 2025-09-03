@@ -10,10 +10,6 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from devcycle.core.repositories.agent_repository import (
-    AgentRepository,
-    AgentTaskRepository,
-)
 from devcycle.core.services.agent_service import AgentService
 
 
@@ -34,21 +30,23 @@ def event_loop():
 
 
 @pytest.fixture
-def mock_agent_repository():
-    """Create a mock agent repository for unit tests."""
-    return AsyncMock(spec=AgentRepository)
-
-
-@pytest.fixture
-def mock_agent_task_repository():
-    """Create a mock agent task repository for unit tests."""
-    return AsyncMock(spec=AgentTaskRepository)
-
-
-@pytest.fixture
-def mock_agent_service(mock_agent_repository, mock_agent_task_repository):
+def mock_agent_service():
     """Create a mock agent service for unit tests."""
     return AsyncMock(spec=AgentService)
+
+
+@pytest.fixture
+def mock_agent_repository():
+    """Create a mock agent repository for unit tests."""
+    mock_repo = AsyncMock()
+    # Add common repository methods
+    mock_repo.get_by_id = AsyncMock()
+    mock_repo.get_by_name = AsyncMock()
+    mock_repo.create = AsyncMock()
+    mock_repo.update = AsyncMock()
+    mock_repo.delete = AsyncMock()
+    mock_repo.list_all = AsyncMock()
+    return mock_repo
 
 
 # Test isolation fixtures

@@ -6,12 +6,12 @@ This module provides CSRF protection for state-changing operations.
 
 import secrets
 import time
-from typing import Callable, Dict
+from typing import Any, Callable, Dict, cast
 
 from fastapi import Request, status
 from starlette.applications import Starlette
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, Response
 
 
 class CSRFProtectionMiddleware(BaseHTTPMiddleware):
@@ -24,17 +24,19 @@ class CSRFProtectionMiddleware(BaseHTTPMiddleware):
         self.csrf_tokens: Dict[str, float] = {}  # token -> timestamp
         self.token_lifetime = 3600  # 1 hour
 
-    async def dispatch(self, request: Request, call_next: Callable) -> JSONResponse:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Any]
+    ) -> Response:
         """Process request and check CSRF token for state-changing operations."""
         # Skip CSRF check for safe methods
         if request.method in ["GET", "HEAD", "OPTIONS"]:
             response = await call_next(request)
-            return response
+            return cast(Response, response)
 
         # Skip CSRF check for health endpoints
         if request.url.path.startswith("/health"):
             response = await call_next(request)
-            return response
+            return cast(Response, response)
 
         # Check CSRF token for state-changing operations
         csrf_token = request.headers.get("X-CSRF-Token")
@@ -52,7 +54,7 @@ class CSRFProtectionMiddleware(BaseHTTPMiddleware):
             )
 
         response = await call_next(request)
-        return response
+        return cast(Response, response)
 
     def _validate_csrf_token(self, token: str) -> bool:
         """Validate CSRF token."""

@@ -31,7 +31,7 @@ class ServiceHealthChecker:
             )
             async with engine.begin() as conn:
                 result = await conn.execute(text("SELECT 1"))
-                await result.fetchone()
+                result.fetchone()
             await engine.dispose()
             return True
         except Exception as e:

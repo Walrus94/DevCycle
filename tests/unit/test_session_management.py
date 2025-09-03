@@ -404,7 +404,7 @@ class TestSessionManagementIntegration:
         ):
             from fastapi import Request
 
-            from devcycle.core.auth.models import User
+            from devcycle.core.auth.tortoise_models import User
 
             # Mock user
             mock_user = User(
