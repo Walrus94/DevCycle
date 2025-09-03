@@ -98,7 +98,7 @@ class RedisCache:
             else:
                 result = self.redis_client.set(full_key, serialized_value)
 
-            return bool(result)
+            return result is not None and bool(result)
 
         except Exception as e:
             logger.error(f"Error setting cache value for key {key}: {e}")

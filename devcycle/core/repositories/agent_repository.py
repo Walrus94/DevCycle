@@ -23,6 +23,8 @@ class AgentRepository(BaseRepository[Agent]):
     def __init__(self, session: AsyncSession):
         """Initialize agent repository."""
         super().__init__(session, Agent)
+        # Type assertion to help MyPy understand the model type
+        self.model = Agent
 
     async def get_by_name(self, name: str) -> Optional[Agent]:
         """Get agent by name."""
@@ -131,7 +133,8 @@ class AgentRepository(BaseRepository[Agent]):
         cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=timeout_minutes)
         stmt = select(self.model).where(
             and_(
-                self.model.is_active.is_(True), self.model.last_heartbeat < cutoff_time
+                self.model.is_active.is_(True),
+                self.model.last_heartbeat < cutoff_time,
             )
         )
         result = await self.session.execute(stmt)

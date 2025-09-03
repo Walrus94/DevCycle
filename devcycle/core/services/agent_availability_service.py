@@ -192,7 +192,7 @@ class AgentAvailabilityService:
             import json
 
             try:
-                configuration = (
+                configuration: dict[str, Any] = (
                     json.loads(agent.configuration) if agent.configuration else {}
                 )
             except json.JSONDecodeError:
