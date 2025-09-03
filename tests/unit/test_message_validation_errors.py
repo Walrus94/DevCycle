@@ -5,7 +5,6 @@ This module tests the custom HTTP exceptions for message validation errors,
 ensuring proper error responses and status codes.
 """
 
-
 from fastapi import HTTPException, status
 
 from devcycle.core.messaging.validation_errors import (

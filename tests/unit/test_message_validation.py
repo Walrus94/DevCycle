@@ -5,7 +5,6 @@ This module tests the message validation models, validation logic,
 and related functionality for the DevCycle messaging system.
 """
 
-
 import pytest
 
 from devcycle.core.messaging.validation import (

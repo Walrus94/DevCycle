@@ -202,9 +202,11 @@ class TestKafkaMessageQueue:
         """Test successful Kafka queue initialization."""
         queue = MessageQueueFactory.create_queue(queue_config)
 
-        with patch.object(queue, "ensure_topics") as mock_topics, patch.object(
-            queue, "init_producer"
-        ) as mock_producer, patch.object(queue, "init_consumer") as mock_consumer:
+        with (
+            patch.object(queue, "ensure_topics") as mock_topics,
+            patch.object(queue, "init_producer") as mock_producer,
+            patch.object(queue, "init_consumer") as mock_consumer,
+        ):
             await queue.initialize()
 
             mock_topics.assert_called_once()

@@ -5,7 +5,6 @@ This module provides the base repository pattern implementation
 that all data access repositories should extend.
 """
 
-
 from abc import ABC
 from typing import Any, Generic, List, Optional, TypeVar, Union
 from uuid import UUID

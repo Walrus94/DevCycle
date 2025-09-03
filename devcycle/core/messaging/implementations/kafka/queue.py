@@ -105,9 +105,11 @@ class KafkaMessageQueue(MessageQueueInterface):
             created_at=time.time(),
             queue_id=message_id,
             ttl=ttl if ttl is not None else self.config.default_ttl,
-            max_retries=max_retries
-            if max_retries is not None
-            else self.config.default_max_retries,
+            max_retries=(
+                max_retries
+                if max_retries is not None
+                else self.config.default_max_retries
+            ),
             metadata=metadata if metadata is not None else {},
         )
 

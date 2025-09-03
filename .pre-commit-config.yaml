@@ -1,17 +1,16 @@
 repos:
   # Code formatting
   - repo: https://github.com/psf/black
-    rev: 23.12.1
+    rev: 24.10.0
     hooks:
       - id: black
-        args: [--line-length=88]
 
   # Import sorting
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
     hooks:
       - id: isort
-        args: [--profile=black, --line-length=88]
+        args: [--profile=black]
 
   # Linting
   - repo: https://github.com/pycqa/flake8

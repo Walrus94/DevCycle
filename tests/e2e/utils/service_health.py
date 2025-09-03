@@ -80,9 +80,9 @@ class ServiceHealthChecker:
         return {
             "database": self.health_status.get("database", False),
             "api": self.health_status.get("api", False),
-            "overall": bool(all(self.health_status.values()))
-            if self.health_status
-            else False,
+            "overall": (
+                bool(all(self.health_status.values())) if self.health_status else False
+            ),
         }
 
 

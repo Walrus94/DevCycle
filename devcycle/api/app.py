@@ -37,9 +37,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers[
-            "Permissions-Policy"
-        ] = "geolocation=(), microphone=(), camera=()"
+        response.headers["Permissions-Policy"] = (
+            "geolocation=(), microphone=(), camera=()"
+        )
 
         # CORS-specific security headers
         origin = request.headers.get("origin")
@@ -71,7 +71,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """Dispatch request with rate limiting for auth endpoints."""
         logger = get_logger(__name__)
-        logger.debug(f"🔍 RateLimitMiddleware processing {request.method} {request.url}")
+        logger.debug(
+            f"🔍 RateLimitMiddleware processing {request.method} {request.url}"
+        )
 
         # Only apply rate limiting to auth endpoints
         if request.url.path.startswith("/api/v1/auth"):
