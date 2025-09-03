@@ -17,14 +17,12 @@ from ..agents.models import Agent, AgentStatus, AgentTask, AgentType
 from .base import BaseRepository
 
 
-class AgentRepository(BaseRepository[Agent]):
+class AgentRepository(BaseRepository):
     """Repository for agent management operations."""
 
     def __init__(self, session: AsyncSession):
         """Initialize agent repository."""
         super().__init__(session, Agent)
-        # Type assertion to help MyPy understand the model type
-        self.model = Agent
 
     async def get_by_name(self, name: str) -> Optional[Agent]:
         """Get agent by name."""
@@ -239,7 +237,7 @@ class AgentRepository(BaseRepository[Agent]):
         }
 
 
-class AgentTaskRepository(BaseRepository[AgentTask]):
+class AgentTaskRepository(BaseRepository):
     """Repository for agent task operations."""
 
     def __init__(self, session: AsyncSession):

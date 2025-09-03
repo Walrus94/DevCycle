@@ -6,7 +6,7 @@ that all data access repositories should extend.
 """
 
 from abc import ABC
-from typing import Any, Generic, List, Optional, TypeVar, Union
+from typing import Any, List, Optional, Union
 from uuid import UUID
 
 from sqlalchemy import delete, select, update
@@ -15,11 +15,8 @@ from sqlalchemy.orm import selectinload
 
 from ..database.models import Base
 
-# Generic type for the model
-T = TypeVar("T", bound=Base)
 
-
-class BaseRepository(Generic[T], ABC):
+class BaseRepository(ABC):
     """
     Base repository interface providing common CRUD operations.
 
@@ -27,7 +24,7 @@ class BaseRepository(Generic[T], ABC):
     must implement, providing a consistent interface for data access.
     """
 
-    def __init__(self, session: AsyncSession, model: type[T]):
+    def __init__(self, session: AsyncSession, model: type[Base]):
         """
         Initialize repository with database session and model.
 
@@ -38,7 +35,7 @@ class BaseRepository(Generic[T], ABC):
         self.session = session
         self.model = model
 
-    async def create(self, **kwargs: Any) -> T:
+    async def create(self, **kwargs: Any) -> Base:
         """
         Create a new entity.
 
@@ -52,9 +49,9 @@ class BaseRepository(Generic[T], ABC):
         self.session.add(entity)
         await self.session.commit()
         await self.session.refresh(entity)
-        return entity  # type: ignore[no-any-return]
+        return entity
 
-    async def get_by_id(self, entity_id: Union[int, UUID]) -> Optional[T]:
+    async def get_by_id(self, entity_id: Union[int, UUID]) -> Optional[Base]:
         """
         Get entity by ID.
 
@@ -66,11 +63,11 @@ class BaseRepository(Generic[T], ABC):
         """
         stmt = select(self.model).where(self.model.id == entity_id)
         result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()  # type: ignore[no-any-return]
+        return result.scalar_one_or_none()
 
     async def get_all(
         self, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[T]:
+    ) -> List[Base]:
         """
         Get all entities with optional pagination.
 
@@ -89,9 +86,11 @@ class BaseRepository(Generic[T], ABC):
             stmt = stmt.limit(limit)
 
         result = await self.session.execute(stmt)
-        return result.scalars().all()  # type: ignore[no-any-return]
+        return result.scalars().all()
 
-    async def update(self, entity_id: Union[int, UUID], **kwargs: Any) -> Optional[T]:
+    async def update(
+        self, entity_id: Union[int, UUID], **kwargs: Any
+    ) -> Optional[Base]:
         """
         Update entity by ID.
 
@@ -130,7 +129,7 @@ class BaseRepository(Generic[T], ABC):
         result = await self.session.execute(stmt)
         await self.session.commit()
 
-        return result.rowcount > 0  # type: ignore[no-any-return]
+        return result.rowcount > 0
 
     async def exists(self, entity_id: Union[int, UUID]) -> bool:
         """
@@ -157,7 +156,7 @@ class BaseRepository(Generic[T], ABC):
         result = await self.session.execute(stmt)
         return len(result.scalars().all())
 
-    async def find_by(self, **filters: Any) -> List[T]:
+    async def find_by(self, **filters: Any) -> List[Base]:
         """
         Find entities by filters.
 
@@ -174,9 +173,9 @@ class BaseRepository(Generic[T], ABC):
                 stmt = stmt.where(getattr(self.model, field) == value)
 
         result = await self.session.execute(stmt)
-        return result.scalars().all()  # type: ignore[no-any-return]
+        return result.scalars().all()
 
-    async def find_one_by(self, **filters: Any) -> Optional[T]:
+    async def find_one_by(self, **filters: Any) -> Optional[Base]:
         """
         Find single entity by filters.
 
@@ -193,9 +192,9 @@ class BaseRepository(Generic[T], ABC):
                 stmt = stmt.where(getattr(self.model, field) == value)
 
         result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()  # type: ignore[no-any-return]
+        return result.scalar_one_or_none()
 
-    def with_relationships(self, *relationships: str) -> "BaseRepository[T]":
+    def with_relationships(self, *relationships: str) -> "BaseRepository":
         """
         Add relationship loading to the next query.
 
