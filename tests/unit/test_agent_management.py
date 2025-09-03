@@ -71,6 +71,7 @@ class TestAgentModels:
         registration = AgentRegistration(
             name="test_agent",
             agent_type=AgentType.BUSINESS_ANALYST,
+            description="Test agent for unit testing",
             version="1.0.0",
             capabilities=[AgentCapability.ANALYSIS],
         )
@@ -276,6 +277,7 @@ class TestAgentService:
         registration = AgentRegistration(
             name="test_agent",
             agent_type=AgentType.BUSINESS_ANALYST,
+            description="Test agent for validation",
             version="1.0.0",
             capabilities=[],  # No capabilities
         )

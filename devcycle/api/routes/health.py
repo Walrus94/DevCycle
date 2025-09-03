@@ -61,6 +61,8 @@ async def health_check() -> HealthResponse:
         status="healthy",
         service="DevCycle API",
         version="0.1.0",
+        components={"api": "healthy"},
+        metrics={"response_time_ms": 0.0},
     )
 
 

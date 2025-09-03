@@ -23,7 +23,6 @@ class AgentRepository(BaseRepository[Agent]):
     def __init__(self, session: AsyncSession):
         """Initialize agent repository."""
         super().__init__(session, Agent)
-        self.model: type[Agent] = Agent
 
     async def get_by_name(self, name: str) -> Optional[Agent]:
         """Get agent by name."""

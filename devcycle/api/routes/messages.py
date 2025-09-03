@@ -76,7 +76,9 @@ async def send_message(
         action=request.action,
         status=MessageStatus.PENDING,
         created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
         data=request.data,
+        error=None,
         priority=request.priority,
         ttl=request.ttl,
         metadata=request.metadata,
@@ -119,6 +121,7 @@ async def broadcast_message(
         skipped_agents=0,
         message_ids=message_ids,
         created_at=datetime.now(timezone.utc),
+        details={"mock": "broadcast details"},
     )
 
 
@@ -217,6 +220,7 @@ async def get_message_history(
                 execution_time_ms=1500,
                 data_size_bytes=1024,
                 priority="normal",
+                error=None,
             )
         )
 
@@ -248,6 +252,7 @@ async def get_message_detail(message_id: str) -> MessageDetailResponse:
         priority="normal",
         ttl=3600,
         metadata={"source": "api"},
+        error=None,
         retry_count=0,
         max_retries=3,
         queue_position=None,
@@ -283,6 +288,7 @@ async def get_agent_messages(
                 execution_time_ms=1500,
                 data_size_bytes=1024,
                 priority="normal",
+                error=None,
             )
         )
 
