@@ -7,13 +7,14 @@ CORS configuration, and basic endpoints.
 
 import time
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator, Callable, Dict, List, Optional
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, cast
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
+from starlette.applications import Starlette
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
@@ -28,7 +29,9 @@ from .versioning import get_version_info
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Middleware to add security headers to all responses."""
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Any]
+    ) -> Response:
         """Dispatch request with security headers."""
         response = await call_next(request)
 
@@ -53,7 +56,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if "server" in response.headers:
             del response.headers["server"]
 
-        return response
+        return cast(Response, response)
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -68,7 +71,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.window_seconds = window_seconds
         self.requests: Dict[str, List[float]] = {}
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Any]
+    ) -> Response:
         """Dispatch request with rate limiting for auth endpoints."""
         logger = get_logger(__name__)
         logger.debug(
@@ -124,7 +129,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         logger.debug(
             f"✅ RateLimitMiddleware completed, response status: {response.status_code}"
         )
-        return response
+        return cast(Response, response)
 
 
 @asynccontextmanager
@@ -228,9 +233,13 @@ def _setup_middleware(app: FastAPI, config: Any) -> None:
 
     # CSRF Protection middleware (only in production)
     if config.environment == "production":
-        app.add_middleware(
-            CSRFProtectionMiddleware, secret_key=config.security.secret_key
-        )
+
+        def csrf_middleware_factory(app: ASGIApp) -> CSRFProtectionMiddleware:
+            return CSRFProtectionMiddleware(
+                cast(Starlette, app), config.security.secret_key
+            )
+
+        app.add_middleware(csrf_middleware_factory)
 
     # Rate limiting middleware for auth endpoints
     app.add_middleware(RateLimitMiddleware, max_requests=10, window_seconds=60)

@@ -6,7 +6,7 @@ including request size validation, content validation, and message structure val
 """
 
 import json
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, cast
 
 from fastapi import HTTPException, Request, Response
 from fastapi.responses import JSONResponse
@@ -26,7 +26,9 @@ class MessageValidationMiddleware:
         self.config = validation_config
         # self.validator = MessageValidator(validation_config)
 
-    async def __call__(self, request: Request, call_next: Callable) -> Response:
+    async def __call__(
+        self, request: Request, call_next: Callable[[Request], Any]
+    ) -> Response:
         """Process the request through validation middleware."""
         try:
             # Validate request size
@@ -41,7 +43,7 @@ class MessageValidationMiddleware:
 
             # Continue to the next middleware/endpoint
             response = await call_next(request)
-            return response
+            return cast(Response, response)
 
         except HTTPException as e:
             # Re-raise HTTP exceptions as-is

@@ -6,6 +6,8 @@ for integration and e2e tests. This is much better than the Docker setup
 as it provides better isolation and automatic cleanup.
 """
 
+from typing import cast
+
 import pytest
 from httpx import AsyncClient
 from testcontainers.postgres import PostgresContainer  # type: ignore
@@ -197,7 +199,7 @@ def client(async_client) -> AsyncClient:
 
     This is an alias for async_client for compatibility.
     """
-    return async_client
+    return cast(AsyncClient, async_client)
 
 
 @pytest.fixture
@@ -276,7 +278,7 @@ async def authenticated_client(async_client, test_tortoise_init) -> AsyncClient:
         async_client.headers.update({"Authorization": f"Bearer {token}"})
         print("✅ Authenticated test client ready")
 
-        return async_client
+        return cast(AsyncClient, async_client)
     except Exception as e:
         print(f"❌ Error creating authenticated client: {e}")
         raise

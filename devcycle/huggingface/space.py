@@ -8,8 +8,25 @@ configuration, and runtime management.
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
+from huggingface_hub import SpaceHardware
+
 from ..core.logging import get_logger
 from .client import HuggingFaceClient
+
+
+def _convert_hardware_string(hardware: str) -> SpaceHardware:
+    """Convert hardware string to SpaceHardware enum."""
+    hardware_map = {
+        "cpu-basic": SpaceHardware.CPU_BASIC,
+        "cpu-upgrade": SpaceHardware.CPU_UPGRADE,
+        "cpu-xl": SpaceHardware.CPU_XL,
+        "gpu-t4-small": SpaceHardware.T4_SMALL,
+        "gpu-t4-medium": SpaceHardware.T4_MEDIUM,
+        "gpu-a10g-small": SpaceHardware.A10G_SMALL,
+        "gpu-a10g-large": SpaceHardware.A10G_LARGE,
+        "gpu-a100": SpaceHardware.A100_LARGE,
+    }
+    return hardware_map.get(hardware, SpaceHardware.CPU_BASIC)
 
 
 @dataclass
@@ -63,7 +80,7 @@ class HuggingFaceSpace:
             space_info = self.client.create_space(
                 repo_id=self.repo_id,
                 space_sdk=config.sdk,
-                space_hardware=config.hardware,
+                space_hardware=_convert_hardware_string(config.hardware),
                 private=config.private,
             )
 

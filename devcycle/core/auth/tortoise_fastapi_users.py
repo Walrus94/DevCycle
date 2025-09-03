@@ -4,12 +4,14 @@ FastAPI Users configuration using Tortoise ORM.
 Native integration with Tortoise ORM.
 """
 
+from typing import AsyncGenerator
+
 from fastapi_users_tortoise import TortoiseUserDatabase
 
 from .tortoise_models import User
 
 
-async def get_user_db() -> TortoiseUserDatabase:
+async def get_user_db() -> AsyncGenerator[TortoiseUserDatabase, None]:
     """Get user database instance."""
     yield TortoiseUserDatabase(User)
 
