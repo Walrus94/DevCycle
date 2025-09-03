@@ -12,7 +12,7 @@ class SecureUserCreate(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=100)
     email: str = Field(..., pattern=r"^[^@]+@[^@]+\.[^@]+$")
-    description: str = Field(default=None, max_length=500)
+    description: str | None = Field(default=None, max_length=500)
 
     @field_validator("name", "description")
     @classmethod

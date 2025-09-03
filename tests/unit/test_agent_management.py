@@ -414,7 +414,7 @@ class TestAgentAPI:
         from devcycle.api.routes.agents import router
 
         # Check that we have the expected endpoints
-        routes = [route.path for route in router.routes]
+        routes = [getattr(route, "path", str(route)) for route in router.routes]
 
         expected_routes = [
             "/agents/",

@@ -7,7 +7,7 @@ on:
     branches: [ main, develop ]
 
 env:
-  PYTHON_VERSION: "3.12"
+  PYTHON_VERSION: "3.12.4"
   POETRY_VERSION: "1.6.1"
 
 jobs:

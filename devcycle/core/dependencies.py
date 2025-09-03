@@ -106,7 +106,7 @@ async def get_current_user_id(user: User = Depends(current_active_user)) -> UUID
     Raises:
         HTTPException: If user is not authenticated
     """
-    return user.id  # type: ignore[no-any-return]
+    return user.id
 
 
 async def get_current_user(user: User = Depends(current_active_user)) -> User:

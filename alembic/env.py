@@ -6,7 +6,7 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
 
-from alembic import context  # type: ignore[attr-defined]
+from alembic import context
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -60,7 +60,7 @@ def run_migrations_offline() -> None:
             )
     except Exception:
         # Fallback to alembic.ini URL
-        url = config.get_main_option("sqlalchemy.url")
+        url = config.get_main_option("sqlalchemy.url") or ""
 
     context.configure(
         url=url,
