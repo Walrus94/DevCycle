@@ -121,14 +121,22 @@ class HuggingFaceClient:
         try:
             # Note: list_spaces method signature may vary between versions
             # Using a more compatible approach
-            spaces = self.api.list_spaces()  # Remove owner parameter for compatibility
+            all_spaces = (
+                self.api.list_spaces()
+            )  # Remove owner parameter for compatibility
             # Filter by owner if needed
             if owner:
                 spaces = [
-                    s for s in spaces if getattr(s, "id", "").startswith(f"{owner}/")
+                    s
+                    for s in all_spaces
+                    if (
+                        getattr(s, "id", "") if hasattr(s, "id") else s.get("id", "")
+                    ).startswith(f"{owner}/")
                 ]
-            self.logger.info(f"Found {len(list(spaces))} spaces for {owner}")
-            return cast(List[Dict[str, Any]], list(spaces))
+            else:
+                spaces = all_spaces
+            self.logger.info(f"Found {len(spaces)} spaces for {owner}")
+            return cast(List[Dict[str, Any]], spaces)
         except Exception as e:
             self.logger.error(f"Failed to get spaces for {owner}: {e}")
             return []

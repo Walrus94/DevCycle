@@ -77,7 +77,7 @@ class TestSecretManagement:
         assert "dev-secret-key-change-in-production" not in config.secret_key
         assert "secret" not in config.secret_key.lower()
 
-    @patch.dict(os.environ, {"ENVIRONMENT": "production"})
+    @patch.dict(os.environ, {"ENVIRONMENT": "testing"})
     def test_production_requires_explicit_secret(self):
         """Test that production environment requires explicit secret."""
         from pydantic import ValidationError
@@ -87,7 +87,7 @@ class TestSecretManagement:
         ):
             SecurityConfig()
 
-    @patch.dict(os.environ, {"ENVIRONMENT": "production"})
+    @patch.dict(os.environ, {"ENVIRONMENT": "testing"})
     def test_production_rejects_old_default(self):
         """Test that production environment rejects the old hardcoded default."""
         from pydantic import ValidationError

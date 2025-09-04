@@ -14,6 +14,48 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+# Create dummy classes for type hints when secret-aware configs are not available
+class SecretAwareSecurityConfig:
+    pass
+
+
+class SecretAwareDatabaseConfig:
+    pass
+
+
+class SecretAwareRedisConfig:
+    pass
+
+
+class SecretAwareHuggingFaceConfig:
+    pass
+
+
+# Import secret-aware configurations if available
+try:
+    from devcycle.core.secrets.secret_config import (
+        SecretAwareDatabaseConfig as _SecretAwareDatabaseConfig,
+    )
+    from devcycle.core.secrets.secret_config import (
+        SecretAwareHuggingFaceConfig as _SecretAwareHuggingFaceConfig,
+    )
+    from devcycle.core.secrets.secret_config import (
+        SecretAwareRedisConfig as _SecretAwareRedisConfig,
+    )
+    from devcycle.core.secrets.secret_config import (
+        SecretAwareSecurityConfig as _SecretAwareSecurityConfig,
+    )
+
+    # Override dummy classes with real ones
+    SecretAwareSecurityConfig = _SecretAwareSecurityConfig
+    SecretAwareDatabaseConfig = _SecretAwareDatabaseConfig
+    SecretAwareRedisConfig = _SecretAwareRedisConfig
+    SecretAwareHuggingFaceConfig = _SecretAwareHuggingFaceConfig
+    SECRET_AWARE_AVAILABLE = True
+except ImportError:
+    SECRET_AWARE_AVAILABLE = False
+
+
 class Environment(str, Enum):
     """Supported environments."""
 
@@ -366,13 +408,31 @@ class DevCycleConfig(BaseSettings):
     )
     debug: bool = Field(default=False, description="Enable debug mode")
 
-    # Component configurations
+    # Component configurations - use secret-aware versions if available
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
-    database: DatabaseConfig = Field(default_factory=DatabaseConfig)
-    security: SecurityConfig = Field(default_factory=SecurityConfig)
+    database: Union[DatabaseConfig, SecretAwareDatabaseConfig] = Field(
+        default_factory=lambda: (
+            SecretAwareDatabaseConfig() if SECRET_AWARE_AVAILABLE else DatabaseConfig()
+        )
+    )
+    security: Union[SecurityConfig, SecretAwareSecurityConfig] = Field(
+        default_factory=lambda: (
+            SecretAwareSecurityConfig() if SECRET_AWARE_AVAILABLE else SecurityConfig()
+        )
+    )
     api: APIConfig = Field(default_factory=APIConfig)
-    redis: RedisConfig = Field(default_factory=RedisConfig)
-    huggingface: HuggingFaceConfig = Field(default_factory=HuggingFaceConfig)
+    redis: Union[RedisConfig, SecretAwareRedisConfig] = Field(
+        default_factory=lambda: (
+            SecretAwareRedisConfig() if SECRET_AWARE_AVAILABLE else RedisConfig()
+        )
+    )
+    huggingface: Union[HuggingFaceConfig, SecretAwareHuggingFaceConfig] = Field(
+        default_factory=lambda: (
+            SecretAwareHuggingFaceConfig()
+            if SECRET_AWARE_AVAILABLE
+            else HuggingFaceConfig()
+        )
+    )
     agent: AgentConfig = Field(default_factory=AgentConfig)
     docker: DockerConfig = Field(default_factory=DockerConfig)
     test: TestConfig = Field(default_factory=TestConfig)

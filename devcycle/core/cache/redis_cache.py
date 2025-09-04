@@ -251,6 +251,16 @@ def get_cache(key_prefix: str = "devcycle:cache:") -> RedisCache:
         RedisCache instance
     """
     global _cache_instance
-    if _cache_instance is None:
+    import os
+
+    # In test environments, always create a new instance to use the current config
+    # This ensures tests can use the correct Redis settings
+    if os.getenv("ENVIRONMENT") == "testing":
         _cache_instance = RedisCache(key_prefix)
+    else:
+        # In non-test environments, use singleton behavior
+        # Only create new instance if none exists, ignore key_prefix for singleton behavior
+        if _cache_instance is None:
+            _cache_instance = RedisCache(key_prefix)
+
     return _cache_instance
