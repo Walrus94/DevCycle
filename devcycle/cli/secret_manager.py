@@ -11,13 +11,12 @@ This tool provides commands for:
 import argparse
 import json
 import sys
-from typing import Any, Dict, Optional
 
 from devcycle.core.secrets.gcp_secret_manager import get_secret_client
 from devcycle.core.secrets.secret_config import validate_production_secrets
 
 
-def create_secret(args) -> None:
+def create_secret(args: argparse.Namespace) -> None:
     """Create a new secret in GCP Secret Manager."""
     client = get_secret_client()
 
@@ -27,14 +26,15 @@ def create_secret(args) -> None:
 
     if success:
         print(
-            f"✅ Secret '{args.secret_id}' created successfully in {args.environment} environment"
+            f"✅ Secret '{args.secret_id}' created successfully in "
+            f"{args.environment} environment"
         )
     else:
         print(f"❌ Failed to create secret '{args.secret_id}'")
         sys.exit(1)
 
 
-def rotate_secret(args) -> None:
+def rotate_secret(args: argparse.Namespace) -> None:
     """Rotate an existing secret."""
     client = get_secret_client()
 
@@ -44,14 +44,15 @@ def rotate_secret(args) -> None:
 
     if success:
         print(
-            f"✅ Secret '{args.secret_id}' rotated successfully in {args.environment} environment"
+            f"✅ Secret '{args.secret_id}' rotated successfully in "
+            f"{args.environment} environment"
         )
     else:
         print(f"❌ Failed to rotate secret '{args.secret_id}'")
         sys.exit(1)
 
 
-def validate_secrets(args) -> None:
+def validate_secrets(args: argparse.Namespace) -> None:
     """Validate that all required secrets are accessible."""
     if args.environment == "production":
         success = validate_production_secrets()
@@ -67,7 +68,7 @@ def validate_secrets(args) -> None:
         )
 
 
-def list_secrets(args) -> None:
+def list_secrets(args: argparse.Namespace) -> None:
     """List all secrets for the given environment."""
     client = get_secret_client()
 
@@ -81,7 +82,7 @@ def list_secrets(args) -> None:
         print(f"📋 No secrets found in {args.environment} environment")
 
 
-def get_secret_value(args) -> None:
+def get_secret_value(args: argparse.Namespace) -> None:
     """Get the value of a specific secret."""
     client = get_secret_client()
 
@@ -101,14 +102,14 @@ def get_secret_value(args) -> None:
         sys.exit(1)
 
 
-def clear_cache(args) -> None:
+def clear_cache(args: argparse.Namespace) -> None:
     """Clear all cached secrets."""
     client = get_secret_client()
     cleared_count = client.clear_all_caches()
     print(f"✅ Cleared {cleared_count} cached secrets")
 
 
-def show_cache_stats(args) -> None:
+def show_cache_stats(args: argparse.Namespace) -> None:
     """Show cache statistics."""
     client = get_secret_client()
     stats = client.get_cache_stats()
@@ -124,18 +125,20 @@ def show_cache_stats(args) -> None:
         print(f"  Connected clients: {stats.get('connected_clients', 0)}")
 
 
-def main():
-    """Main CLI entry point."""
+def main() -> None:
+    """Run the main CLI entry point."""
     parser = argparse.ArgumentParser(
         description="DevCycle Secret Manager CLI",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   # Create a new secret
-  python -m devcycle.cli.secret_manager create jwt-secret-key --value "my-secret-key" --environment prod
+  python -m devcycle.cli.secret_manager create jwt-secret-key \\
+    --value "my-secret-key" --environment prod
 
   # Rotate an existing secret
-  python -m devcycle.cli.secret_manager rotate jwt-secret-key --value "new-secret-key" --environment prod
+  python -m devcycle.cli.secret_manager rotate jwt-secret-key \\
+    --value "new-secret-key" --environment prod
 
   # List all secrets
   python -m devcycle.cli.secret_manager list --environment prod

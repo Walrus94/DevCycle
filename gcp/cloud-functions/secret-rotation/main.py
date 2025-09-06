@@ -11,8 +11,8 @@ import logging
 import os
 import secrets
 import string
-from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from datetime import datetime, timezone
+from typing import Any, Dict
 
 from google.api_core import exceptions as gcp_exceptions
 from google.cloud import secretmanager
@@ -33,7 +33,7 @@ def generate_jwt_secret() -> str:
     return secrets.token_urlsafe(32)
 
 
-def rotate_secret(event: Dict[str, Any], context) -> Dict[str, Any]:
+def rotate_secret(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
     Cloud Function to rotate secrets in GCP Secret Manager.
 
@@ -80,7 +80,7 @@ def rotate_secret(event: Dict[str, Any], context) -> Dict[str, Any]:
             "secret_id": secret_id,
             "environment": environment,
             "rotation_type": rotation_type,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "result": result,
         }
 
@@ -89,7 +89,7 @@ def rotate_secret(event: Dict[str, Any], context) -> Dict[str, Any]:
         return {
             "success": False,
             "error": str(e),
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
 
@@ -165,7 +165,7 @@ def _log_rotation_event(
         "secret_id": secret_id,
         "environment": environment,
         "rotation_type": rotation_type,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "result": result,
     }
 
@@ -178,7 +178,7 @@ def _log_rotation_event(
     # 4. Update audit databases
 
 
-def bulk_rotate_secrets(event: Dict[str, Any], context) -> Dict[str, Any]:
+def bulk_rotate_secrets(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
     Cloud Function to rotate multiple secrets at once.
 
@@ -225,7 +225,7 @@ def bulk_rotate_secrets(event: Dict[str, Any], context) -> Dict[str, Any]:
             "successful_rotations": success_count,
             "failed_rotations": len(results) - success_count,
             "results": results,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
     except Exception as e:
@@ -233,11 +233,11 @@ def bulk_rotate_secrets(event: Dict[str, Any], context) -> Dict[str, Any]:
         return {
             "success": False,
             "error": str(e),
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
 
-def validate_secrets(event: Dict[str, Any], context) -> Dict[str, Any]:
+def validate_secrets(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
     Cloud Function to validate that all required secrets exist and are accessible.
 
@@ -263,7 +263,10 @@ def validate_secrets(event: Dict[str, Any], context) -> Dict[str, Any]:
         validation_results = {}
 
         for secret_id in required_secrets:
-            secret_name = f"projects/{project_id}/secrets/{environment}-{secret_id}/versions/latest"
+            secret_name = (
+                f"projects/{project_id}/secrets/"
+                f"{environment}-{secret_id}/versions/latest"
+            )
 
             try:
                 response = client.access_secret_version(request={"name": secret_name})
@@ -297,7 +300,7 @@ def validate_secrets(event: Dict[str, Any], context) -> Dict[str, Any]:
             "success": all_valid,
             "environment": environment,
             "validation_results": validation_results,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
     except Exception as e:
@@ -305,5 +308,5 @@ def validate_secrets(event: Dict[str, Any], context) -> Dict[str, Any]:
         return {
             "success": False,
             "error": str(e),
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }

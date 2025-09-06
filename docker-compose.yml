@@ -1,43 +1,69 @@
 version: '3.8'
 
 services:
-  # Kafka Broker (KRaft mode - no Zookeeper needed)
-  kafka:
-    image: confluentinc/cp-kafka:7.4.0
-    hostname: kafka
-    container_name: devcycle-kafka
-    ports:
-      - "9092:9092"
-      - "9101:9101"
+  # ACP Agents (replacing Kafka-based messaging)
+  # Business Analyst Agent
+  business-analyst-agent:
+    build: .
+    container_name: devcycle-business-analyst
+    depends_on:
+      app:
+        condition: service_started
     environment:
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: 'broker,controller'
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
-      KAFKA_LISTENERS: 'PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092'
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
-      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_JMX_PORT: 9101
-      KAFKA_JMX_HOSTNAME: localhost
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
-      KAFKA_DELETE_TOPIC_ENABLE: 'true'
-      KAFKA_LOG_RETENTION_HOURS: 168
-      KAFKA_LOG_SEGMENT_BYTES: 1073741824
-      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 300000
-      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
-      KAFKA_CONTROLLER_LOG_DIRS: '/var/lib/kafka/data'
-    volumes:
-      - kafka-data:/var/lib/kafka/data
-    healthcheck:
-      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      - ACP_SERVER_URL=http://app:8000
+      - ACP_AGENT_ID=business-analyst
+      - ACP_AGENT_NAME=Business Analyst Agent
+      - ACP_AGENT_VERSION=1.0.0
+      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY}
+      - LOG_LEVEL=INFO
+    command: >
+      bash -c "
+        echo 'Starting Business Analyst Agent...' &&
+        poetry run python -m devcycle.core.acp.agents.business_analyst_agent
+      "
+    restart: unless-stopped
+
+  # Testing Agent
+  testing-agent:
+    build: .
+    container_name: devcycle-testing-agent
+    depends_on:
+      app:
+        condition: service_started
+    environment:
+      - ACP_SERVER_URL=http://app:8000
+      - ACP_AGENT_ID=testing-agent
+      - ACP_AGENT_NAME=Testing Agent
+      - ACP_AGENT_VERSION=1.0.0
+      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY}
+      - LOG_LEVEL=INFO
+    command: >
+      bash -c "
+        echo 'Starting Testing Agent...' &&
+        poetry run python -m devcycle.core.acp.agents.testing_agent
+      "
+    restart: unless-stopped
+
+  # Code Generator Agent
+  code-generator-agent:
+    build: .
+    container_name: devcycle-code-generator
+    depends_on:
+      app:
+        condition: service_started
+    environment:
+      - ACP_SERVER_URL=http://app:8000
+      - ACP_AGENT_ID=code-generator
+      - ACP_AGENT_NAME=Code Generator Agent
+      - ACP_AGENT_VERSION=1.0.0
+      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY}
+      - LOG_LEVEL=INFO
+    command: >
+      bash -c "
+        echo 'Starting Code Generator Agent...' &&
+        poetry run python -m devcycle.core.acp.agents.code_generator_agent
+      "
+    restart: unless-stopped
 
   # PostgreSQL Database
   postgres:
@@ -88,12 +114,14 @@ services:
     networks:
       - default
 
-  # DevCycle Application with Auto-Migration
+  # DevCycle Application with ACP Integration
   app:
     image: python:3.12-slim
     container_name: devcycle-app
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       - ENVIRONMENT=development
@@ -102,8 +130,18 @@ services:
       - DB_USERNAME=postgres
       - DB_PASSWORD=devcycle123
       - DB_DATABASE=devcycle
+      - REDIS_URL=redis://redis:6379/0
+      - ACP_SERVER_URL=http://app:8000
+      - ACP_AGENT_ID=devcycle-orchestrator
+      - ACP_AGENT_NAME=DevCycle Orchestrator
+      - ACP_AGENT_VERSION=1.0.0
+      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY}
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
+      - LOG_LEVEL=INFO
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
     volumes:
       - .:/app
+      - ./logs:/var/log/acp
     working_dir: /app
     command: >
       bash -c "
@@ -115,19 +153,61 @@ services:
         while ! pg_isready -h postgres -p 5432 -U postgres; do sleep 1; done &&
         echo 'Database ready, running migrations...' &&
         poetry run aerich upgrade &&
-        echo 'Starting application...' &&
+        echo 'Starting ACP-enabled application...' &&
         poetry run uvicorn devcycle.api.app:app --host 0.0.0.0 --port 8000 --reload
       "
     ports:
       - "8000:8000"
     restart: unless-stopped
 
+  # Elasticsearch for ACP monitoring
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: devcycle-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+
+  # Kibana for ACP monitoring visualization
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: devcycle-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - xpack.security.enabled=false
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    volumes:
+      - ./kibana:/usr/share/kibana/config/dashboards
+    restart: unless-stopped
+
+  # Logstash for ACP log processing
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: devcycle-logstash
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+      - ./logs:/var/log/acp
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
 volumes:
-  kafka-data:
-    driver: local
   postgres-data:
     driver: local
   redis-data:
+    driver: local
+  elasticsearch_data:
     driver: local
 
 networks:

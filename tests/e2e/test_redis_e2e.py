@@ -12,7 +12,7 @@ from uuid import uuid4
 
 import pytest
 import redis  # type: ignore[import-untyped]
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from testcontainers.redis import RedisContainer
 
 from devcycle.api.app import create_app
@@ -63,7 +63,9 @@ class TestRedisE2E:
     @pytest.fixture
     async def client(self, app_with_redis):
         """Create test client for E2E tests."""
-        async with AsyncClient(app=app_with_redis, base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app_with_redis), base_url="http://test"
+        ) as client:
             yield client
 
     @pytest.fixture

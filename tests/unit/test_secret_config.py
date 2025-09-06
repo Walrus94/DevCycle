@@ -6,7 +6,7 @@ testing their behavior with mocked dependencies.
 """
 
 import os
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -56,7 +56,10 @@ class TestSecretAwareSecurityConfig:
                 os.environ,
                 {
                     "ENVIRONMENT": "testing",
-                    "SECRET_KEY": "env-generated-secure-token-that-is-long-enough-for-validation-12345",
+                    "SECRET_KEY": (
+                        "env-generated-secure-token-that-is-long-enough-for-"
+                        "validation-12345"
+                    ),
                 },
             ),
             patch(
@@ -129,12 +132,16 @@ class TestSecretAwareSecurityConfig:
 
             for weak_key in weak_keys:
                 with patch(
-                    "devcycle.core.secrets.secret_config.SecretAwareSecurityConfig._get_secret_key",
+                    "devcycle.core.secrets.secret_config."
+                    "SecretAwareSecurityConfig._get_secret_key",
                     return_value=weak_key,
                 ):
                     with pytest.raises(
                         ValueError,
-                        match="Secret key must be at least 32 characters long|Secret key contains weak patterns",
+                        match=(
+                            "Secret key must be at least 32 characters long|"
+                            "Secret key contains weak patterns"
+                        ),
                     ):
                         SecretAwareSecurityConfig()
 
@@ -143,7 +150,8 @@ class TestSecretAwareSecurityConfig:
         with (
             patch.dict(os.environ, {"ENVIRONMENT": "development"}),
             patch(
-                "devcycle.core.secrets.secret_config.SecretAwareSecurityConfig._get_secret_key",
+                "devcycle.core.secrets.secret_config."
+                "SecretAwareSecurityConfig._get_secret_key",
                 return_value="short",
             ),
         ):
@@ -158,7 +166,8 @@ class TestSecretAwareSecurityConfig:
         with (
             patch.dict(os.environ, {"ENVIRONMENT": "testing"}),
             patch(
-                "devcycle.core.secrets.secret_config.SecretAwareSecurityConfig._get_secret_key",
+                "devcycle.core.secrets.secret_config."
+                "SecretAwareSecurityConfig._get_secret_key",
                 return_value="dev-secret-key-change-in-production",
             ),
         ):

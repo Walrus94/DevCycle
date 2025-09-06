@@ -9,7 +9,7 @@ as it provides better isolation and automatic cleanup.
 from typing import cast
 
 import pytest
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from testcontainers.postgres import PostgresContainer  # type: ignore
 from testcontainers.redis import RedisContainer  # type: ignore
 from tortoise import Tortoise
@@ -61,6 +61,14 @@ def postgres_container():
             print("🧹 Cleaning up PostgreSQL container...")
     except Exception as e:
         print(f"❌ Error setting up PostgreSQL container: {e}")
+        # Check if it's a Docker connectivity issue
+        if "DockerException" in str(type(e)) or "CreateFile" in str(e):
+            pytest.skip(
+                (
+                    "Docker is not available. "
+                    "Skipping integration tests that require Docker."
+                )
+            )
         raise
 
 
@@ -82,6 +90,14 @@ def redis_container():
             print("🧹 Cleaning up Redis container...")
     except Exception as e:
         print(f"❌ Error setting up Redis container: {e}")
+        # Check if it's a Docker connectivity issue
+        if "DockerException" in str(type(e)) or "CreateFile" in str(e):
+            pytest.skip(
+                (
+                    "Docker is not available. "
+                    "Skipping integration tests that require Docker."
+                )
+            )
         raise
 
 
@@ -89,9 +105,14 @@ def redis_container():
 def test_db_url(postgres_container):
     """Get the test database URL from the container."""
     print("🔗 Getting test database URL...")
-    # Convert the sync URL to async
-    sync_url = postgres_container.get_connection_url()
-    print(f"📡 Sync URL: {sync_url}")
+    try:
+        # Convert the sync URL to async
+        sync_url = postgres_container.get_connection_url()
+        print(f"📡 Sync URL: {sync_url}")
+    except Exception:
+        pytest.skip(
+            "Docker is not available. Skipping integration tests that require Docker."
+        )
 
     # Handle different URL formats
     if sync_url.startswith("postgresql+psycopg2://"):
@@ -111,12 +132,17 @@ def test_db_url(postgres_container):
 def test_redis_url(redis_container):
     """Get the test Redis URL from the container."""
     print("🔗 Getting test Redis URL...")
-    # RedisContainer doesn't have get_connection_url(), so we construct it manually
-    host = redis_container.get_container_host_ip()
-    port = redis_container.get_exposed_port(6379)
-    redis_url = f"redis://{host}:{port}"
-    print(f"📡 Redis URL: {redis_url}")
-    return redis_url
+    try:
+        # RedisContainer doesn't have get_connection_url(), so we construct it manually
+        host = redis_container.get_container_host_ip()
+        port = redis_container.get_exposed_port(6379)
+        redis_url = f"redis://{host}:{port}"
+        print(f"📡 Redis URL: {redis_url}")
+        return redis_url
+    except Exception:
+        pytest.skip(
+            "Docker is not available. Skipping integration tests that require Docker."
+        )
 
 
 @pytest.fixture(scope="session")
@@ -187,7 +213,7 @@ def async_client(test_tortoise_init, test_app) -> AsyncClient:
     """Create an async test client."""
     print("🌐 Creating async test client...")
 
-    client = AsyncClient(app=test_app, base_url="http://test")
+    client = AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test")
     print("✅ Async test client created")
 
     return client

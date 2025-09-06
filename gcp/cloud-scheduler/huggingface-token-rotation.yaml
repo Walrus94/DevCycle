@@ -1,0 +1,28 @@
+# HuggingFace Token Rotation (every 180 days)
+apiVersion: cloudscheduler.cnrm.cloud.google.com/v1beta1
+kind: CloudSchedulerJob
+metadata:
+  name: huggingface-token-rotation
+  namespace: default
+spec:
+  name: huggingface-token-rotation
+  description: "Rotate HuggingFace token every 180 days"
+  schedule: "0 5 1 */6 *"  # 5 AM on the 1st of every 6th month
+  timeZone: "UTC"
+  httpTarget:
+    uri: "https://REGION-PROJECT_ID.cloudfunctions.net/rotate-secret"
+    httpMethod: "POST"
+    headers:
+      Content-Type: "application/json"
+    body: |
+      {
+        "secret_id": "huggingface-token",
+        "environment": "prod",
+        "rotation_type": "token"
+      }
+  retryConfig:
+    retryCount: 3
+    maxRetryDuration: "300s"
+    minBackoffDuration: "5s"
+    maxBackoffDuration: "60s"
+    maxDoublings: 5

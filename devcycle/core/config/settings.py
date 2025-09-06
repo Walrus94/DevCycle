@@ -13,46 +13,30 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
-# Create dummy classes for type hints when secret-aware configs are not available
-class SecretAwareSecurityConfig:
-    pass
-
-
-class SecretAwareDatabaseConfig:
-    pass
-
-
-class SecretAwareRedisConfig:
-    pass
-
-
-class SecretAwareHuggingFaceConfig:
-    pass
-
-
 # Import secret-aware configurations if available
 try:
     from devcycle.core.secrets.secret_config import (
-        SecretAwareDatabaseConfig as _SecretAwareDatabaseConfig,
-    )
-    from devcycle.core.secrets.secret_config import (
-        SecretAwareHuggingFaceConfig as _SecretAwareHuggingFaceConfig,
-    )
-    from devcycle.core.secrets.secret_config import (
-        SecretAwareRedisConfig as _SecretAwareRedisConfig,
-    )
-    from devcycle.core.secrets.secret_config import (
-        SecretAwareSecurityConfig as _SecretAwareSecurityConfig,
+        SecretAwareDatabaseConfig,
+        SecretAwareHuggingFaceConfig,
+        SecretAwareRedisConfig,
+        SecretAwareSecurityConfig,
     )
 
-    # Override dummy classes with real ones
-    SecretAwareSecurityConfig = _SecretAwareSecurityConfig
-    SecretAwareDatabaseConfig = _SecretAwareDatabaseConfig
-    SecretAwareRedisConfig = _SecretAwareRedisConfig
-    SecretAwareHuggingFaceConfig = _SecretAwareHuggingFaceConfig
     SECRET_AWARE_AVAILABLE = True
 except ImportError:
+    # Create dummy classes for type hints when secret-aware configs are not available
+    class SecretAwareSecurityConfig:  # type: ignore
+        """Dummy class for type hints when secret-aware configs are not available."""
+
+    class SecretAwareDatabaseConfig:  # type: ignore
+        """Dummy class for type hints when secret-aware configs are not available."""
+
+    class SecretAwareRedisConfig:  # type: ignore
+        """Dummy class for type hints when secret-aware configs are not available."""
+
+    class SecretAwareHuggingFaceConfig:  # type: ignore
+        """Dummy class for type hints when secret-aware configs are not available."""
+
     SECRET_AWARE_AVAILABLE = False
 
 

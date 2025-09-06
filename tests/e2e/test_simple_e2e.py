@@ -22,7 +22,7 @@ class TestSimpleE2E:
     async def test_agent_endpoint_requires_auth(self, async_client: AsyncClient):
         """Test that agent endpoint requires authentication and returns 401."""
         print("🔍 Testing agent endpoint authentication requirement...")
-        response = await async_client.get("/api/v1/agents/")
+        response = await async_client.get("/api/v1/acp/agents")
         print(f"📡 Agent response status: {response.status_code}")
         print(f"📄 Agent response text: {response.text}")
         assert response.status_code == 401

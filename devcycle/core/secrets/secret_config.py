@@ -7,13 +7,12 @@ with environment variables for development.
 """
 
 import os
-import secrets
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from devcycle.core.config.settings import Environment, generate_secure_secret
+from devcycle.core.config.settings import generate_secure_secret
 from devcycle.core.secrets.gcp_secret_manager import get_secret_client
 
 
@@ -27,7 +26,10 @@ class SecretAwareSecurityConfig(BaseSettings):
 
     secret_key: str = Field(
         default_factory=lambda: SecretAwareSecurityConfig._get_secret_key(),
-        description="Secret key for JWT tokens (retrieved from GCP Secret Manager in production)",
+        description=(
+            "Secret key for JWT tokens "
+            "(retrieved from GCP Secret Manager in production)"
+        ),
     )
     algorithm: str = Field(default="HS256", description="JWT algorithm")
     access_token_expire_minutes: int = Field(
@@ -39,8 +41,8 @@ class SecretAwareSecurityConfig(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="SECURITY_", env_ignore_empty=True)
 
-    def __init__(self, **data):
-        """Custom initialization to handle secret_key from GCP or environment."""
+    def __init__(self, **data: Any) -> None:
+        """Initialize with secret_key from GCP or environment."""
         # Get secret_key from GCP or environment before calling super().__init__
         if "secret_key" not in data:
             data["secret_key"] = self._get_secret_key()
@@ -58,7 +60,7 @@ class SecretAwareSecurityConfig(BaseSettings):
                 "jwt-secret-key",
                 environment="prod" if environment == "production" else "test",
             )
-            if secret_value:
+            if secret_value and isinstance(secret_value, str):
                 return secret_value
 
         # Fallback to environment variable
@@ -73,7 +75,8 @@ class SecretAwareSecurityConfig(BaseSettings):
         # Production fallback (should not reach here)
         raise ValueError(
             "SECRET_KEY must be set in production environment. "
-            "Either set SECRET_KEY environment variable or configure GCP Secret Manager."
+            "Either set SECRET_KEY environment variable or "
+            "configure GCP Secret Manager."
         )
 
     @field_validator("secret_key")
@@ -109,16 +112,16 @@ class SecretAwareSecurityConfig(BaseSettings):
 
 
 class SecretAwareDatabaseConfig(BaseSettings):
-    """
-    Database configuration with GCP Secret Manager integration.
-    """
+    """Database configuration with GCP Secret Manager integration."""
 
     host: str = Field(default="localhost", description="Database host")
     port: int = Field(default=5432, description="Database port")
     username: str = Field(default="postgres", description="Database username")
     password: str = Field(
         default_factory=lambda: SecretAwareDatabaseConfig._get_db_password(),
-        description="Database password (retrieved from GCP Secret Manager in production)",
+        description=(
+            "Database password (retrieved from GCP Secret Manager in production)"
+        ),
     )
     database: str = Field(default="devcycle", description="Database name")
     pool_size: int = Field(default=10, description="Connection pool size")
@@ -127,8 +130,8 @@ class SecretAwareDatabaseConfig(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="DB_", env_ignore_empty=True)
 
-    def __init__(self, **data):
-        """Custom initialization to handle password from GCP or environment."""
+    def __init__(self, **data: Any) -> None:
+        """Initialize with password from GCP or environment."""
         # Get password from GCP or environment before calling super().__init__
         if "password" not in data:
             data["password"] = self._get_db_password()
@@ -149,7 +152,7 @@ class SecretAwareDatabaseConfig(BaseSettings):
                 environment="prod" if environment == "production" else "test",
             )
             print(f"DEBUG: GCP secret value: {secret_value}")
-            if secret_value:
+            if secret_value and isinstance(secret_value, str):
                 return secret_value
 
         # Fallback to environment variable
@@ -164,7 +167,8 @@ class SecretAwareDatabaseConfig(BaseSettings):
         # Production fallback (should not reach here)
         raise ValueError(
             "DB_PASSWORD must be set in production environment. "
-            "Either set DB_PASSWORD environment variable or configure GCP Secret Manager."
+            "Either set DB_PASSWORD environment variable or "
+            "configure GCP Secret Manager."
         )
 
     @field_validator("password")
@@ -204,9 +208,7 @@ class SecretAwareDatabaseConfig(BaseSettings):
 
 
 class SecretAwareRedisConfig(BaseSettings):
-    """
-    Redis configuration with GCP Secret Manager integration.
-    """
+    """Redis configuration with GCP Secret Manager integration."""
 
     host: str = Field(default="127.0.0.1", description="Redis host")
     port: int = Field(default=6379, description="Redis port")
@@ -227,8 +229,8 @@ class SecretAwareRedisConfig(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="REDIS_", env_ignore_empty=True)
 
-    def __init__(self, **data):
-        """Custom initialization to handle password from GCP or environment."""
+    def __init__(self, **data: Any) -> None:
+        """Initialize with password from GCP or environment."""
         # Get password from GCP or environment before calling super().__init__
         if "password" not in data:
             data["password"] = self._get_redis_password()
@@ -246,7 +248,7 @@ class SecretAwareRedisConfig(BaseSettings):
                 "redis-password",
                 environment="prod" if environment == "production" else "test",
             )
-            if secret_value:
+            if secret_value and isinstance(secret_value, str):
                 return secret_value
 
         # Fallback to environment variable
@@ -259,20 +261,21 @@ class SecretAwareRedisConfig(BaseSettings):
 
 
 class SecretAwareHuggingFaceConfig(BaseSettings):
-    """
-    Hugging Face configuration with GCP Secret Manager integration.
-    """
+    """Hugging Face configuration with GCP Secret Manager integration."""
 
     token: str = Field(
         default_factory=lambda: SecretAwareHuggingFaceConfig._get_hf_token(),
-        description="Hugging Face API token (retrieved from GCP Secret Manager in production)",
+        description=(
+            "Hugging Face API token "
+            "(retrieved from GCP Secret Manager in production)"
+        ),
     )
     org_name: str = Field(default="", description="Hugging Face organization name")
 
     model_config = SettingsConfigDict(env_prefix="HF_", env_ignore_empty=True)
 
-    def __init__(self, **data):
-        """Custom initialization to handle token from GCP or environment."""
+    def __init__(self, **data: Any) -> None:
+        """Initialize with token from GCP or environment."""
         # Get token from GCP or environment before calling super().__init__
         if "token" not in data:
             data["token"] = self._get_hf_token()
@@ -290,7 +293,7 @@ class SecretAwareHuggingFaceConfig(BaseSettings):
                 "huggingface-token",
                 environment="prod" if environment == "production" else "test",
             )
-            if secret_value:
+            if secret_value and isinstance(secret_value, str):
                 return secret_value
 
         # Fallback to environment variable
@@ -322,7 +325,7 @@ def get_production_secrets() -> Dict[str, str]:
 
     for secret_id in secret_ids:
         secret_value = secret_client.get_secret(secret_id, environment="prod")
-        if secret_value:
+        if secret_value and isinstance(secret_value, str):
             secrets_dict[secret_id] = secret_value
 
     return secrets_dict
@@ -353,7 +356,8 @@ def validate_production_secrets() -> bool:
     if missing_secrets:
         print(f"ERROR: Missing required production secrets: {missing_secrets}")
         print(
-            "Please configure these secrets in GCP Secret Manager or set environment variables."
+            "Please configure these secrets in GCP Secret Manager or "
+            "set environment variables."
         )
         return False
 

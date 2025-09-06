@@ -35,7 +35,6 @@ class RedisCache:
             decode_responses=True,
             socket_timeout=config.redis.socket_timeout,
             socket_connect_timeout=config.redis.socket_connect_timeout,
-            retry_on_timeout=config.redis.retry_on_timeout,
             max_connections=config.redis.max_connections,
         )
         self.key_prefix = key_prefix
@@ -259,7 +258,8 @@ def get_cache(key_prefix: str = "devcycle:cache:") -> RedisCache:
         _cache_instance = RedisCache(key_prefix)
     else:
         # In non-test environments, use singleton behavior
-        # Only create new instance if none exists, ignore key_prefix for singleton behavior
+        # Only create new instance if none exists,
+        # ignore key_prefix for singleton behavior
         if _cache_instance is None:
             _cache_instance = RedisCache(key_prefix)
 

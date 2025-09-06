@@ -129,12 +129,10 @@ class HuggingFaceClient:
                 spaces = [
                     s
                     for s in all_spaces
-                    if (
-                        getattr(s, "id", "") if hasattr(s, "id") else s.get("id", "")
-                    ).startswith(f"{owner}/")
+                    if getattr(s, "id", "").startswith(f"{owner}/")
                 ]
             else:
-                spaces = all_spaces
+                spaces = list(all_spaces)
             self.logger.info(f"Found {len(spaces)} spaces for {owner}")
             return cast(List[Dict[str, Any]], spaces)
         except Exception as e:
@@ -227,3 +225,36 @@ class HuggingFaceClient:
         except Exception as e:
             self.logger.error(f"Failed to get runtime for space {repo_id}: {e}")
             return None
+
+    async def generate_text(
+        self,
+        model_name: str,
+        prompt: str,
+        max_length: int = 512,
+        temperature: float = 0.7,
+    ) -> Dict[str, Any]:
+        """
+        Generate text using Hugging Face models.
+
+        Args:
+            model_name: Name of the model to use
+            prompt: Input prompt for text generation
+            max_length: Maximum length of generated text
+            temperature: Sampling temperature
+
+        Returns:
+            Dictionary containing generated text
+        """
+        try:
+            # For now, return a mock response
+            # In a real implementation, this would call the Hugging Face API
+            self.logger.info(f"Generating text with model: {model_name}")
+            return {
+                "generated_text": f"Mock generated text for prompt: {prompt[:100]}...",
+                "model_name": model_name,
+                "max_length": max_length,
+                "temperature": temperature,
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to generate text: {e}")
+            return {"generated_text": "", "error": str(e)}

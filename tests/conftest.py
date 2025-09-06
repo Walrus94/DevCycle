@@ -10,8 +10,6 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from devcycle.core.services.agent_service import AgentService
-
 
 # Configure pytest-docker
 def pytest_configure(config):
@@ -32,7 +30,7 @@ def event_loop():
 @pytest.fixture
 def mock_agent_service():
     """Create a mock agent service for unit tests."""
-    return AsyncMock(spec=AgentService)
+    return AsyncMock()
 
 
 @pytest.fixture

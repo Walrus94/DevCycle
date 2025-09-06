@@ -11,7 +11,6 @@ This module provides a client for Google Cloud Secret Manager that supports:
 import json
 import logging
 import os
-from functools import lru_cache
 from typing import Any, Dict, Optional, Union
 
 from ..cache.redis_cache import get_cache
@@ -19,14 +18,18 @@ from ..cache.redis_cache import get_cache
 try:
     from google.api_core import exceptions as gcp_exceptions
     from google.cloud import secretmanager
+    from google.cloud.secretmanager import SecretManagerServiceClient
 
     GCP_AVAILABLE = True
 except ImportError:
     GCP_AVAILABLE = False
-    secretmanager = None
     gcp_exceptions = None
+    secretmanager = None
+    SecretManagerServiceClient = None
 
-from devcycle.core.config.settings import Environment, get_config
+from devcycle.core.config import get_config
+
+from ..cache.redis_cache import RedisCache
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +46,9 @@ class GCPSecretManagerClient:
     - Support for JSON secrets
     """
 
+    cache: Optional[RedisCache]
+    client: Optional[SecretManagerServiceClient]
+
     def __init__(
         self,
         project_id: Optional[str] = None,
@@ -53,9 +59,9 @@ class GCPSecretManagerClient:
         Initialize the GCP Secret Manager client.
 
         Args:
-            project_id: GCP project ID. If None, will be auto-detected
+            project_id: GCP project ID (defaults to GOOGLE_CLOUD_PROJECT env var)
             cache_ttl: Cache TTL in seconds
-            enable_caching: Whether to enable caching
+            enable_caching: Whether to enable Redis caching
         """
         self.project_id = project_id or self._get_project_id()
         self.cache_ttl = cache_ttl
@@ -76,7 +82,7 @@ class GCPSecretManagerClient:
                     f"GCP Secret Manager initialized for project: {self.project_id}"
                 )
             except Exception as e:
-                logger.warning(f"Failed to initialize GCP Secret Manager: {e}")
+                logger.error(f"Failed to initialize GCP Secret Manager: {e}")
                 self.client = None
                 self.gcp_enabled = False
         else:
@@ -84,11 +90,13 @@ class GCPSecretManagerClient:
             self.gcp_enabled = False
             if not GCP_AVAILABLE:
                 logger.warning(
-                    "GCP Secret Manager not available. Install google-cloud-secret-manager"
+                    "GCP Secret Manager not available. "
+                    "Install google-cloud-secret-manager"
                 )
             if not self.project_id:
                 logger.warning(
-                    "GCP project ID not found. Set GOOGLE_CLOUD_PROJECT environment variable"
+                    "GCP project ID not found. "
+                    "Set GOOGLE_CLOUD_PROJECT environment variable"
                 )
 
     def _get_project_id(self) -> Optional[str]:
@@ -104,14 +112,15 @@ class GCPSecretManagerClient:
                 import requests
 
                 response = requests.get(
-                    "http://metadata.google.internal/computeMetadata/v1/project/project-id",
+                    "http://metadata.google.internal/computeMetadata/v1/"
+                    "project/project-id",
                     headers={"Metadata-Flavor": "Google"},
                     timeout=2,
                 )
                 if response.status_code == 200:
-                    return response.text.strip()
-            except Exception:
-                pass
+                    return str(response.text.strip())
+            except Exception as e:
+                logger.debug(f"Failed to get project ID from metadata service: {e}")
 
         return None
 
@@ -133,7 +142,10 @@ class GCPSecretManagerClient:
             environment = config.environment.value
 
         # Use environment-specific naming
-        return f"projects/{self.project_id}/secrets/{environment}-{secret_id}/versions/latest"
+        return (
+            f"projects/{self.project_id}/secrets/"
+            f"{environment}-{secret_id}/versions/latest"
+        )
 
     def _get_cache_key(self, secret_name: str) -> str:
         """Get Redis cache key for secret."""
@@ -233,7 +245,8 @@ class GCPSecretManagerClient:
         env_value = os.getenv(secret_id.upper().replace("-", "_"))
         if env_value:
             logger.info(
-                f"Using direct environment variable: {secret_id.upper().replace('-', '_')}"
+                f"Using direct environment variable: "
+                f"{secret_id.upper().replace('-', '_')}"
             )
             return self._parse_secret_value(env_value, parse_json)
 
@@ -246,7 +259,12 @@ class GCPSecretManagerClient:
         """Parse secret value as JSON if requested."""
         if parse_json:
             try:
-                return json.loads(value)
+                parsed = json.loads(value)
+                if isinstance(parsed, dict):
+                    return parsed
+                else:
+                    logger.warning("JSON secret is not a dict, returning as string")
+                    return value
             except json.JSONDecodeError:
                 logger.warning("Failed to parse secret as JSON, returning as string")
                 return value
@@ -397,8 +415,7 @@ def get_secret(
     fallback_env_var: Optional[str] = None,
     parse_json: bool = False,
 ) -> Optional[Union[str, Dict[str, Any]]]:
-    """
-    Convenience function to get a secret.
+    """Get a secret from GCP Secret Manager or environment fallback.
 
     Args:
         secret_id: Secret identifier
@@ -416,8 +433,7 @@ def get_secret(
 def create_secret(
     secret_id: str, secret_value: str, environment: Optional[str] = None
 ) -> bool:
-    """
-    Convenience function to create a secret.
+    """Create a secret in GCP Secret Manager.
 
     Args:
         secret_id: Secret identifier
@@ -434,8 +450,7 @@ def create_secret(
 def rotate_secret(
     secret_id: str, new_value: str, environment: Optional[str] = None
 ) -> bool:
-    """
-    Convenience function to rotate a secret.
+    """Rotate a secret in GCP Secret Manager.
 
     Args:
         secret_id: Secret identifier

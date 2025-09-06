@@ -18,8 +18,8 @@ class TestSecurityFeatures:
         app = create_app()
         client = TestClient(app)
 
-        # Test health endpoint to check security headers
-        response = client.get("/api/v1/health")
+        # Test version endpoint to check security headers
+        response = client.get("/api/version")
 
         # Check security headers are present
         assert response.status_code == 200
@@ -86,7 +86,7 @@ class TestSecurityFeatures:
         client = TestClient(app)
 
         # Test OPTIONS request to check CORS headers
-        response = client.options("/api/v1/health")
+        response = client.options("/api/version")
 
         # CORS should be configured (though OPTIONS might not show all headers in test)
         assert response.status_code in [200, 405]  # 405 is also acceptable for OPTIONS
@@ -101,7 +101,7 @@ class TestSecurityFeatures:
 
         # Test that security headers are actually added (this is the real test)
         client = TestClient(app)
-        response = client.get("/api/v1/health")
+        response = client.get("/api/version")
 
         # Verify security headers are present
         assert "X-Content-Type-Options" in response.headers

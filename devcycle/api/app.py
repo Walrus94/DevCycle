@@ -7,6 +7,7 @@ CORS configuration, and basic endpoints.
 
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, cast
 
 from fastapi import FastAPI, Request, status
@@ -339,18 +340,52 @@ def _setup_routes(app: FastAPI) -> None:
 
     from ..core.auth.fastapi_users import auth_backend, fastapi_users
     from .auth import auth_router
-    from .routes import agents, health, messages
+    from .routes import acp, websocket
 
     # Create versioned routers (for future use)
     # health_router = create_versioned_router(APIVersion.V1, tags=["health"])
     # agents_router = create_versioned_router(APIVersion.V1, tags=["agents"])
     # messages_router = create_versioned_router(APIVersion.V1, tags=["messages"])
     # auth_router_v1 = create_versioned_router(APIVersion.V1, tags=["auth"])
+    # Add basic health endpoints
+    @app.get("/api/v1/health", tags=["health"])
+    async def health_check() -> Dict[str, str]:
+        """Return basic health status."""
+        return {
+            "status": "healthy",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+    @app.get("/api/v1/health/detailed", tags=["health"])
+    async def detailed_health_check() -> Dict[str, Any]:
+        """Detailed health check endpoint."""
+        return {
+            "status": "healthy",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "version": "0.1.0",
+            "environment": "development",
+            "components": {"database": "healthy", "redis": "healthy", "api": "healthy"},
+            "metrics": {
+                "uptime": "0s",  # This would be calculated in a real implementation
+                "memory_usage": "low",
+                "cpu_usage": "low",
+            },
+        }
+
+    @app.get("/api/v1/health/ready", tags=["health"])
+    async def readiness_check() -> Dict[str, str]:
+        """Readiness check endpoint."""
+        return {"status": "ready", "timestamp": datetime.now(timezone.utc).isoformat()}
+
+    @app.get("/api/v1/health/live", tags=["health"])
+    async def liveness_check() -> Dict[str, str]:
+        """Liveness check endpoint."""
+        return {"status": "alive", "timestamp": datetime.now(timezone.utc).isoformat()}
+
     # Include routers
-    app.include_router(health.router, prefix="/api/v1", tags=["health"])
-    app.include_router(agents.router, prefix="/api/v1", tags=["agents"])
-    app.include_router(messages.router, prefix="/api/v1", tags=["messages"])
     app.include_router(auth_router, prefix="/api/v1")
+    app.include_router(acp.acp_router, prefix="/api/v1", tags=["acp"])
+    app.include_router(websocket.websocket_router, tags=["websocket"])
 
     # Include FastAPI Users routers
     app.include_router(

@@ -9,13 +9,18 @@ from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 
-from .agents.lifecycle import AgentLifecycleService
+from .acp.config import ACPConfig
+from .acp.events.redis_events import RedisACPEvents
+from .acp.services.agent_registry import ACPAgentRegistry
+from .acp.services.message_router import ACPMessageRouter
+from .acp.services.workflow_engine import ACPWorkflowEngine
+
+# from .agents.lifecycle import AgentLifecycleService  # Removed - using ACP instead
 from .auth.tortoise_fastapi_users import current_active_user
 from .auth.tortoise_models import User
-from .messaging.middleware import MessageValidator
-from .messaging.validation import MessageValidationConfig
-from .services.agent_availability_service import AgentAvailabilityService
-from .services.agent_service import AgentService
+from .cache import ACPCache, get_cache
+
+# Legacy messaging and agent services removed - using ACP instead
 
 # UserRepository removed - using FastAPI Users TortoiseUserDatabase directly
 
@@ -26,24 +31,19 @@ from .services.agent_service import AgentService
 # Repository pattern removed - using direct Tortoise ORM operations
 
 
-async def get_lifecycle_service() -> AgentLifecycleService:
-    """
-    Get agent lifecycle service dependency.
+# async def get_lifecycle_service() -> AgentLifecycleService:
+#     """
+#     Get agent lifecycle service dependency.
+#
+#     Returns:
+#         AgentLifecycleService instance
+#     """
+#     return AgentLifecycleService()
+#
+# # Removed - using ACP instead
 
-    Returns:
-        AgentLifecycleService instance
-    """
-    return AgentLifecycleService()
 
-
-async def get_agent_service() -> AgentService:
-    """
-    Get agent service dependency.
-
-    Returns:
-        AgentService instance
-    """
-    return AgentService()
+# Legacy agent service removed - using ACP instead
 
 
 async def get_current_user_id(user: User = Depends(current_active_user)) -> UUID:
@@ -99,27 +99,82 @@ async def require_superuser(user: User = Depends(current_active_user)) -> User:
 # Authenticated user service removed - using FastAPI Users directly
 
 
-async def get_message_validator() -> MessageValidator:
+# Legacy message validator and agent availability service removed - using ACP instead
+
+
+# ACP Dependencies
+def get_acp_config() -> ACPConfig:
     """
-    Get message validator dependency.
+    Get ACP configuration.
 
     Returns:
-        MessageValidator instance
+        ACPConfig instance
     """
-    config = MessageValidationConfig()
-    return MessageValidator(config)
+    return ACPConfig()
 
 
-async def get_agent_availability_service(
-    agent_service: AgentService = Depends(get_agent_service),
-) -> AgentAvailabilityService:
+def get_acp_cache() -> ACPCache:
     """
-    Get agent availability service dependency.
-
-    Args:
-        agent_service: Agent service instance
+    Get ACP cache instance.
 
     Returns:
-        AgentAvailabilityService instance
+        ACPCache instance
     """
-    return AgentAvailabilityService(agent_service)
+    redis_cache = get_cache(key_prefix="devcycle:cache:")
+    return ACPCache(redis_cache)
+
+
+def get_agent_registry() -> ACPAgentRegistry:
+    """
+    Get ACP agent registry.
+
+    Returns:
+        ACPAgentRegistry instance
+    """
+    config = get_acp_config()
+    acp_cache = get_acp_cache()
+    events = get_redis_events()
+    return ACPAgentRegistry(config, acp_cache, events)
+
+
+def get_message_router() -> ACPMessageRouter:
+    """
+    Get ACP message router.
+
+    Returns:
+        ACPMessageRouter instance
+    """
+    config = get_acp_config()
+    agent_registry = get_agent_registry()
+    return ACPMessageRouter(config, agent_registry)
+
+
+def get_redis_events() -> RedisACPEvents:
+    """
+    Get Redis ACP events service.
+
+    Returns:
+        RedisACPEvents instance
+    """
+    redis_cache = get_cache(key_prefix="devcycle:cache:")
+    return RedisACPEvents(redis_cache)
+
+
+def get_workflow_engine() -> ACPWorkflowEngine:
+    """
+    Get ACP workflow engine.
+
+    Returns:
+        ACPWorkflowEngine instance
+    """
+    from .acp.config import ACPWorkflowConfig
+
+    config = ACPConfig()
+    workflow_config = ACPWorkflowConfig()
+    agent_registry = get_agent_registry()
+    message_router = get_message_router()
+    acp_cache = get_acp_cache()
+    events = get_redis_events()
+    return ACPWorkflowEngine(
+        config, workflow_config, agent_registry, message_router, acp_cache, events
+    )

@@ -7,7 +7,7 @@ These tests verify the complete secret management flow using real GCP Secret Man
 
 import os
 import time
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from testcontainers.redis import RedisContainer
@@ -155,7 +155,9 @@ class TestSecretManagementE2E:
                     "GOOGLE_CLOUD_PROJECT": "test-project",
                     "REDIS_HOST": redis_container.get_container_host_ip(),
                     "REDIS_PORT": str(redis_container.get_exposed_port(6379)),
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
                 },
             ),
@@ -211,7 +213,10 @@ class TestSecretManagementE2E:
             )
             assert database_config.url == expected_url
 
-            expected_async_url = "postgresql+asyncpg://testuser:e2e-db-password@db.example.com:5432/testdb"
+            expected_async_url = (
+                "postgresql+asyncpg://"
+                + "testuser:e2e-db-password@db.example.com:5432/testdb"
+            )
             assert database_config.async_url == expected_async_url
 
     @pytest.mark.skip(
@@ -227,7 +232,9 @@ class TestSecretManagementE2E:
                     "GOOGLE_CLOUD_PROJECT": "test-project",
                     "REDIS_HOST": redis_container.get_container_host_ip(),
                     "REDIS_PORT": str(redis_container.get_exposed_port(6379)),
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
                 },
             ),
@@ -295,11 +302,15 @@ class TestSecretManagementE2E:
                 os.environ,
                 {
                     "ENVIRONMENT": "testing",
-                    "SECRET_KEY": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
+                    "SECRET_KEY": (
+                        "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"
+                    ),
                     "DB_PASSWORD": "fallback-db-password",
                     "REDIS_HOST": redis_container.get_container_host_ip(),
                     "REDIS_PORT": str(redis_container.get_exposed_port(6379)),
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
                 },
             ),
@@ -348,7 +359,9 @@ class TestSecretManagementE2E:
                     "GOOGLE_CLOUD_PROJECT": "test-project",
                     "REDIS_HOST": redis_container.get_container_host_ip(),
                     "REDIS_PORT": str(redis_container.get_exposed_port(6379)),
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
                 },
             ),
@@ -379,7 +392,8 @@ class TestSecretManagementE2E:
             secret2 = e2e_client.get_secret("jwt-secret-key", environment="prod")
             assert secret2 == "cached-secret"
 
-            # Verify GCP was called twice (once for create_secret, once for get_secret - caching might not work due to Redis connection issues)
+            # Verify GCP was called twice (once for create_secret, once for get_secret -
+            # caching might not work due to Redis connection issues)
             assert mock_gcp_client.access_secret_version.call_count == 2
 
             # Wait for cache to expire
@@ -405,7 +419,9 @@ class TestSecretManagementE2E:
                     "GOOGLE_CLOUD_PROJECT": "test-project",
                     "REDIS_HOST": redis_container.get_container_host_ip(),
                     "REDIS_PORT": str(redis_container.get_exposed_port(6379)),
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
                 },
             ),
@@ -452,11 +468,15 @@ class TestSecretManagementE2E:
                 os.environ,
                 {
                     "ENVIRONMENT": "testing",
-                    "SECRET_KEY": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
+                    "SECRET_KEY": (
+                        "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"
+                    ),
                     "REDIS_HOST": redis_container.get_container_host_ip(),
                     "REDIS_PORT": str(redis_container.get_exposed_port(6379)),
                     "DB_PASSWORD": "test-db-password",
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
                 },
             ),
@@ -514,8 +534,12 @@ class TestSecretManagementE2E:
                     "REDIS_HOST": redis_container.get_container_host_ip(),
                     "REDIS_PORT": str(redis_container.get_exposed_port(6379)),
                     "DB_PASSWORD": "test-db-password",
-                    "SECRET_KEY": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "SECRET_KEY": (
+                        "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"
+                    ),
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
                 },
             ),
@@ -554,7 +578,8 @@ class TestSecretManagementE2E:
             # Should be reasonably fast (allowing for Redis connection issues)
             assert total_time < 60.0  # Should complete in less than 60 seconds
 
-            # Verify GCP was called for each retrieval (caching might not work due to Redis connection issues)
+            # Verify GCP was called for each retrieval (caching might not work due to
+            # Redis connection issues)
             assert mock_gcp_client.access_secret_version.call_count >= 1
 
     def test_concurrent_access_e2e(self, mock_gcp_client, redis_container):
@@ -568,10 +593,14 @@ class TestSecretManagementE2E:
                 {
                     "ENVIRONMENT": "testing",
                     "GOOGLE_CLOUD_PROJECT": "test-project",
-                    "SECRET_KEY": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
+                    "SECRET_KEY": (
+                        "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"
+                    ),
                     "REDIS_HOST": redis_container.get_container_host_ip(),
                     "REDIS_PORT": str(redis_container.get_exposed_port(6379)),
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
                 },
             ),
@@ -586,7 +615,8 @@ class TestSecretManagementE2E:
             e2e_client = GCPSecretManagerClient(project_id="test-project")
             mock_get_client.return_value = e2e_client
 
-            # Reload config to pick up new environment variables (after mocks are set up)
+            # Reload config to pick up new environment variables
+            # (after mocks are set up)
             from devcycle.core.config import reload_config
 
             reload_config()

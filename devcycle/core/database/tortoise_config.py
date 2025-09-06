@@ -30,6 +30,7 @@ TORTOISE_ORM = {
         "models": {
             "models": [
                 "devcycle.core.models.tortoise_models",
+                "devcycle.core.models.acp_models",
                 "devcycle.core.auth.tortoise_models",
                 "aerich.models",
             ],

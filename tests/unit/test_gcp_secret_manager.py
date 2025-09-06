@@ -5,17 +5,13 @@ These tests focus on the core functionality of the GCPSecretManagerClient
 with mocked dependencies to ensure fast execution and isolation.
 """
 
-import json
 import os
-import time
-from typing import Any, Dict
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from google.api_core import exceptions as gcp_exceptions
 
 from devcycle.core.secrets.gcp_secret_manager import (
-    GCP_AVAILABLE,
     GCPSecretManagerClient,
     create_secret,
     get_secret,
@@ -100,8 +96,8 @@ class TestGCPSecretManagerClient:
             mock_config.return_value.environment.value = "staging"
             secret_name = client._get_secret_name("jwt-secret-key")
             assert (
-                secret_name
-                == "projects/test-project/secrets/staging-jwt-secret-key/versions/latest"
+                secret_name == "projects/test-project/secrets/"
+                "staging-jwt-secret-key/versions/latest"
             )
 
     def test_cache_operations(self):
@@ -426,12 +422,7 @@ class TestGCPSecretManagerCaching:
 
     def test_cache_disabled(self):
         """Test behavior when caching is disabled."""
-        with (
-            patch("devcycle.core.secrets.gcp_secret_manager.secretmanager") as mock_sm,
-            patch(
-                "devcycle.core.secrets.gcp_secret_manager.get_cache"
-            ) as mock_get_cache,
-        ):
+        with patch("devcycle.core.secrets.gcp_secret_manager.secretmanager") as mock_sm:
 
             mock_client = Mock()
             mock_response = Mock()

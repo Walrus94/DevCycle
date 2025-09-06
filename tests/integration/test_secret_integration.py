@@ -6,12 +6,11 @@ of the secret management system with mocked external dependencies.
 """
 
 import os
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from testcontainers.redis import RedisContainer
 
-from devcycle.core.secrets.gcp_secret_manager import GCPSecretManagerClient
 from devcycle.core.secrets.secret_config import (
     SecretAwareDatabaseConfig,
     SecretAwareHuggingFaceConfig,
@@ -53,14 +52,19 @@ class TestSecretManagerIntegration:
                     "GOOGLE_CLOUD_PROJECT": "test-project",
                     "REDIS_HOST": redis_container.get_container_host_ip(),
                     "REDIS_PORT": str(redis_container.get_exposed_port(6379)),
-                    "SECRET_KEY": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "SECRET_KEY": (
+                        "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"
+                    ),
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
-                    "DB_PASSWORD": "test-db-password",  # Required for DevCycleConfig initialization
+                    "DB_PASSWORD": "test-db-password",  # Required for DevCycleConfig
                 },
             ),
             patch(
-                "devcycle.core.secrets.gcp_secret_manager.secretmanager.SecretManagerServiceClient"
+                "devcycle.core.secrets.gcp_secret_manager.secretmanager."
+                "SecretManagerServiceClient"
             ) as mock_gcp_client,
         ):
             # Mock GCP client with different secret values
@@ -71,7 +75,10 @@ class TestSecretManagerIntegration:
             def mock_access_secret_version(request):
                 secret_name = request["name"]
                 if "jwt-secret-key" in secret_name:
-                    mock_response.payload.data.decode.return_value = "gcp-generated-secure-token-that-is-long-enough-for-validation-12345"
+                    mock_response.payload.data.decode.return_value = (
+                        "gcp-generated-secure-token-that-is-"
+                        "long-enough-for-validation-12345"
+                    )
                 elif "database-password" in secret_name:
                     mock_response.payload.data.decode.return_value = "gcp-db-password"
                 elif "redis-password" in secret_name:
@@ -99,7 +106,8 @@ class TestSecretManagerIntegration:
 
             # Debug: Check what the GCP client returned
             print(
-                f"GCP client calls: {mock_gcp_client_instance.access_secret_version.call_count}"
+                f"GCP client calls: "
+                f"{mock_gcp_client_instance.access_secret_version.call_count}"
             )
             print(f"Database config password: {database_config.password}")
 
@@ -122,13 +130,18 @@ class TestSecretManagerIntegration:
                 os.environ,
                 {
                     "ENVIRONMENT": "testing",
-                    "SECRET_KEY": "env-generated-secure-token-that-is-long-enough-for-validation-12345",
+                    "SECRET_KEY": (
+                        "env-generated-secure-token-that-is-"
+                        + "long-enough-for-validation-12345"
+                    ),
                     "DB_PASSWORD": "env-db-password",
                     "REDIS_PASSWORD": "env-redis-password",
                     "HF_TOKEN": "env-hf-token",
                     "REDIS_HOST": redis_container.get_container_host_ip(),
                     "REDIS_PORT": str(redis_container.get_exposed_port(6379)),
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
                 },
             ),
@@ -197,9 +210,13 @@ class TestSecretManagerIntegration:
                     "GOOGLE_CLOUD_PROJECT": "test-project",
                     "REDIS_HOST": redis_container.get_container_host_ip(),
                     "REDIS_PORT": str(redis_container.get_exposed_port(6379)),
-                    "SECRET_KEY": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
+                    "SECRET_KEY": (
+                        "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"
+                    ),
                     "DB_PASSWORD": "test-db-password",
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
                 },
             ),
@@ -240,12 +257,12 @@ class TestSecretManagerIntegration:
                 config1.secret_key
                 == "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"
             )
-            assert (
-                config2.secret_key
-                == "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"
+            assert config2.secret_key == (
+                "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"
             )
 
-            # GCP client should be called for each config instance (caching doesn't work across separate instances)
+            # GCP client should be called for each config instance (caching doesn't work
+            # across separate instances)
             assert mock_gcp_client_instance.get_secret.call_count == 2
 
     def test_production_secrets_integration(self, redis_container):
@@ -257,9 +274,13 @@ class TestSecretManagerIntegration:
                     "ENVIRONMENT": "testing",
                     "REDIS_HOST": redis_container.get_container_host_ip(),
                     "REDIS_PORT": str(redis_container.get_exposed_port(6379)),
-                    "SECRET_KEY": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
+                    "SECRET_KEY": (
+                        "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"
+                    ),
                     "DB_PASSWORD": "test-db-password",
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
                 },
             ),
@@ -306,11 +327,16 @@ class TestSecretManagerIntegration:
                 os.environ,
                 {
                     "ENVIRONMENT": "testing",
-                    "SECRET_KEY": "env-generated-secure-token-that-is-long-enough-for-validation-12345",
+                    "SECRET_KEY": (
+                        "env-generated-secure-token-that-is-"
+                        + "long-enough-for-validation-12345"
+                    ),
                     "DB_PASSWORD": "env-db-password",
                     "REDIS_HOST": redis_container.get_container_host_ip(),
                     "REDIS_PORT": str(redis_container.get_exposed_port(6379)),
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
                 },
             ),
@@ -353,7 +379,10 @@ class TestSecretManagerIntegration:
                 os.environ,
                 {
                     "ENVIRONMENT": "staging",
-                    "SECRET_KEY": "staging-generated-secure-token-that-is-long-enough-for-validation-12345",
+                    "SECRET_KEY": (
+                        "staging-generated-secure-token-"
+                        + "that-is-long-enough-for-validation-12345"
+                    ),
                     "DB_PASSWORD": "staging-db-password",
                 },
             ),
@@ -375,9 +404,9 @@ class TestSecretManagerIntegration:
             database_config = SecretAwareDatabaseConfig()
 
             # Should use environment variables directly
-            assert (
-                security_config.secret_key
-                == "staging-generated-secure-token-that-is-long-enough-for-validation-12345"
+            assert security_config.secret_key == (
+                "staging-generated-secure-token-"
+                + "that-is-long-enough-for-validation-12345"
             )
             assert database_config.password == "staging-db-password"
 
@@ -392,14 +421,19 @@ class TestSecretManagerIntegration:
                 {
                     "ENVIRONMENT": "testing",
                     "GOOGLE_CLOUD_PROJECT": "test-project",
-                    "SECRET_KEY": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
+                    "SECRET_KEY": (
+                        "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"
+                    ),
                     "DB_PASSWORD": "test-db-password",
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
                 },
             ),
             patch(
-                "devcycle.core.secrets.gcp_secret_manager.secretmanager.SecretManagerServiceClient"
+                "devcycle.core.secrets.gcp_secret_manager.secretmanager."
+                "SecretManagerServiceClient"
             ) as mock_gcp_client,
         ):
             # Reload config to pick up new environment variables
@@ -434,7 +468,9 @@ class TestSecretManagerIntegration:
                     "REDIS_HOST": redis_container.get_container_host_ip(),
                     "REDIS_PORT": str(redis_container.get_exposed_port(6379)),
                     "DB_PASSWORD": "test-db-password",
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
                 },
             ),
@@ -491,9 +527,14 @@ class TestSecretManagerIntegration:
                 os.environ,
                 {
                     "ENVIRONMENT": "testing",
-                    "SECRET_KEY": "env-generated-secure-token-that-is-long-enough-for-validation-12345",
+                    "SECRET_KEY": (
+                        "env-generated-secure-token-"
+                        + "that-is-long-enough-for-validation-12345"
+                    ),
                     "DB_PASSWORD": "env-db-password",
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
                     # REDIS_PASSWORD and HF_TOKEN not set
                 },
@@ -540,9 +581,13 @@ class TestSecretManagerIntegration:
                     "GOOGLE_CLOUD_PROJECT": "test-project",
                     "REDIS_HOST": redis_container.get_container_host_ip(),
                     "REDIS_PORT": str(redis_container.get_exposed_port(6379)),
-                    "SECRET_KEY": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
+                    "SECRET_KEY": (
+                        "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"
+                    ),
                     "DB_PASSWORD": "test-db-password",
-                    "API_CORS_ORIGINS": '["https://example.com", "https://app.example.com"]',
+                    "API_CORS_ORIGINS": (
+                        '["https://example.com", "https://app.example.com"]'
+                    ),
                     "API_CORS_CREDENTIALS": "false",
                 },
             ),
@@ -588,6 +633,10 @@ class TestSecretManagerIntegration:
             # Update the mock to return the new secret
             def mock_access_secret_version_updated(request):
                 secret_name = request["name"]
+                mock_response = Mock()
+                mock_response.payload = Mock()
+                mock_response.payload.data = Mock()
+
                 if "jwt-secret-key" in secret_name:
                     mock_response.payload.data.decode.return_value = new_secret_value
                 elif "database-password" in secret_name:
@@ -631,7 +680,8 @@ class TestSecretManagerIntegration:
             secret_client = get_secret_client()
             if secret_client.cache:
                 secret_client.cache.delete(
-                    "devcycle:secrets:projects/test-project/secrets/prod-jwt-secret-key/versions/latest"
+                    "devcycle:secrets:projects/test-project/secrets/"
+                    "prod-jwt-secret-key/versions/latest"
                 )
 
             # Create new config instance (should get the rotated secret)

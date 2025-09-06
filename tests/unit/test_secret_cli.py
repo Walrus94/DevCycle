@@ -6,9 +6,7 @@ with mocked dependencies to ensure fast execution and isolation.
 """
 
 import json
-import sys
-from io import StringIO
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
