@@ -390,16 +390,21 @@ class TestSessionManagementIntegration:
 
     def test_logout_endpoint_integration(self, mock_config, mock_redis):
         """Test logout endpoint integration."""
-        with patch("devcycle.core.config.get_config", return_value=mock_config), patch(
-            "devcycle.core.auth.token_blacklist.redis.Redis", return_value=mock_redis
-        ), patch(
-            "devcycle.core.auth.session_monitor.redis.Redis", return_value=mock_redis
-        ), patch(
-            "devcycle.api.auth.endpoints.current_active_user"
-        ) as mock_user_dep:
+        with (
+            patch("devcycle.core.config.get_config", return_value=mock_config),
+            patch(
+                "devcycle.core.auth.token_blacklist.redis.Redis",
+                return_value=mock_redis,
+            ),
+            patch(
+                "devcycle.core.auth.session_monitor.redis.Redis",
+                return_value=mock_redis,
+            ),
+            patch("devcycle.api.auth.endpoints.current_active_user") as mock_user_dep,
+        ):
             from fastapi import Request
 
-            from devcycle.core.auth.models import User
+            from devcycle.core.auth.tortoise_models import User
 
             # Mock user
             mock_user = User(
@@ -438,8 +443,12 @@ class TestSessionManagementIntegration:
 
     def test_session_monitoring_integration(self, mock_config, mock_redis):
         """Test session monitoring integration."""
-        with patch("devcycle.core.config.get_config", return_value=mock_config), patch(
-            "devcycle.core.auth.session_monitor.redis.Redis", return_value=mock_redis
+        with (
+            patch("devcycle.core.config.get_config", return_value=mock_config),
+            patch(
+                "devcycle.core.auth.session_monitor.redis.Redis",
+                return_value=mock_redis,
+            ),
         ):
             session_monitor = SessionMonitor()
             user_id = str(uuid.uuid4())

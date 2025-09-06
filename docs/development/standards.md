@@ -238,7 +238,7 @@ Use Pydantic for data validation and serialization:
 ```python
 from pydantic import BaseModel, Field, validator
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 class AgentCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
@@ -639,7 +639,7 @@ def log_agent_activity(agent_id: str, action: str, user_id: str, **kwargs):
         "agent_id": agent_id,
         "action": action,
         "user_id": user_id,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         **{k: v for k, v in kwargs.items() if k not in ['password', 'token', 'secret']}
     }
     logger.info(f"Agent activity: {json.dumps(log_data)}")

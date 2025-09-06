@@ -1,0 +1,76 @@
+{
+  "version": "8.0.0",
+  "objects": [
+    {
+      "id": "acp-agent-health-dashboard",
+      "type": "dashboard",
+      "attributes": {
+        "title": "ACP Agent Health Dashboard",
+        "description": "Real-time monitoring of ACP agent health and performance",
+        "panelsJSON": "[{\"version\":\"8.0.0\",\"gridData\":{\"x\":0,\"y\":0,\"w\":24,\"h\":15,\"i\":\"1\"},\"panelIndex\":\"1\",\"embeddableConfig\":{\"title\":\"Agent Health Status\"},\"panelRefName\":\"panel_1\"},{\"version\":\"8.0.0\",\"gridData\":{\"x\":24,\"y\":0,\"w\":24,\"h\":15,\"i\":\"2\"},\"panelIndex\":\"2\",\"embeddableConfig\":{\"title\":\"Message Processing Rate\"},\"panelRefName\":\"panel_2\"},{\"version\":\"8.0.0\",\"gridData\":{\"x\":0,\"y\":15,\"w\":24,\"h\":15,\"i\":\"3\"},\"panelIndex\":\"3\",\"embeddableConfig\":{\"title\":\"Error Rate\"},\"panelRefName\":\"panel_3\"},{\"version\":\"8.0.0\",\"gridData\":{\"x\":24,\"y\":15,\"w\":24,\"h\":15,\"i\":\"4\"},\"panelIndex\":\"4\",\"embeddableConfig\":{\"title\":\"System Events\"},\"panelRefName\":\"panel_4\"}]",
+        "optionsJSON": "{\"useMargins\":true,\"syncColors\":false,\"hidePanelTitles\":false}",
+        "version": 1,
+        "timeRestore": false,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "acp-agent-health-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "Agent Health Status",
+        "visState": "{\"title\":\"Agent Health Status\",\"type\":\"metric\",\"params\":{\"addTooltip\":true,\"addLegend\":true,\"type\":\"metric\",\"metric\":{\"colorSchema\":\"Green to Red\",\"percentageMode\":false,\"useRanges\":false,\"colorBackground\":true,\"colorRange\":[{\"from\":0,\"to\":100}],\"colors\":{\"0\":\"#c7c7c7\",\"1\":\"#d44a3a\"},\"invertColors\":false,\"labels\":{\"show\":true,\"color\":\"black\"},\"style\":{\"bgFill\":\"#000\",\"bgColor\":false,\"labelColor\":false,\"subText\":\"\",\"fontSize\":60}},\"dimensions\":{\"metrics\":[{\"accessor\":0,\"format\":{\"id\":\"number\"},\"params\":{}}],\"buckets\":[]}}",
+        "uiStateJSON": "{}",
+        "description": "Shows the health status of ACP agents",
+        "version": 1,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"acp-logs-*\",\"query\":{\"bool\":{\"must\":[{\"term\":{\"service\":\"acp\"}},{\"term\":{\"metric_name\":\"agent_count\"}}]}},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "acp-message-rate-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "Message Processing Rate",
+        "visState": "{\"title\":\"Message Processing Rate\",\"type\":\"histogram\",\"params\":{\"grid\":{\"categoryLines\":false,\"style\":{\"color\":\"#eee\"}},\"categoryAxes\":[{\"id\":\"CategoryAxis-1\",\"type\":\"category\",\"position\":\"bottom\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\"},\"labels\":{\"show\":true,\"truncate\":100},\"title\":{}}],\"valueAxes\":[{\"id\":\"ValueAxis-1\",\"name\":\"LeftAxis-1\",\"type\":\"value\",\"position\":\"left\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\",\"mode\":\"normal\"},\"labels\":{\"show\":true,\"rotate\":0,\"filter\":false,\"truncate\":100},\"title\":{\"text\":\"Messages per Second\"}}],\"seriesParams\":[{\"data\":{\"id\":\"1\",\"label\":\"Message Rate\"},\"type\":\"histogram\",\"valueAxis\":\"ValueAxis-1\",\"drawLinesBetweenPoints\":true,\"showCircles\":true}],\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"times\":[],\"addTimeMarker\":false}}",
+        "uiStateJSON": "{}",
+        "description": "Shows the rate of message processing over time",
+        "version": 1,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"acp-logs-*\",\"query\":{\"bool\":{\"must\":[{\"term\":{\"service\":\"acp\"}},{\"term\":{\"metric_name\":\"message_processing_rate\"}}]}},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "acp-error-rate-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "Error Rate",
+        "visState": "{\"title\":\"Error Rate\",\"type\":\"gauge\",\"params\":{\"gauge\":{\"verticalSplit\":false,\"extendRange\":true,\"percentageMode\":true,\"gaugeType\":\"Arc\",\"gaugeStyle\":\"Full\",\"backStyle\":\"Full\",\"scale\":{\"show\":true,\"labels\":false,\"color\":\"#333\"},\"type\":\"meter\",\"style\":{\"bgWidth\":0.9,\"width\":0.9,\"mask\":false,\"maskBars\":50,\"bgFill\":\"#000\",\"bgColor\":false,\"subText\":\"\",\"fontSize\":60},\"min\":0,\"max\":100,\"colorsRange\":[{\"from\":0,\"to\":50},{\"from\":50,\"to\":75},{\"from\":75,\"to\":100}],\"invert\":false,\"labels\":{\"show\":true,\"color\":\"black\"},\"addColorRange\":false,\"colors\":{\"0\":\"#c7c7c7\",\"1\":\"#d44a3a\"}}},\"dimensions\":{\"metrics\":[{\"accessor\":0,\"format\":{\"id\":\"percent\"},\"params\":{}}],\"buckets\":[]}}",
+        "uiStateJSON": "{}",
+        "description": "Shows the error rate as a percentage",
+        "version": 1,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"acp-logs-*\",\"query\":{\"bool\":{\"must\":[{\"term\":{\"service\":\"acp\"}},{\"term\":{\"metric_name\":\"error_rate\"}}]}},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "acp-events-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "System Events",
+        "visState": "{\"title\":\"System Events\",\"type\":\"table\",\"params\":{\"perPage\":10,\"showPartialRows\":false,\"showMeticsAtAllLevels\":false,\"sort\":{\"columnIndex\":null,\"direction\":null},\"showTotal\":false,\"showToolbar\":true,\"canCollapseRows\":true,\"canSelectRows\":false,\"columns\":[{\"id\":\"timestamp\",\"name\":\"@timestamp\",\"field\":\"@timestamp\",\"width\":200,\"formatter\":\"date\",\"formatterParams\":{\"pattern\":\"YYYY-MM-DD HH:mm:ss\"}},{\"id\":\"event_type\",\"name\":\"Event Type\",\"field\":\"event_type\",\"width\":150},{\"id\":\"message\",\"name\":\"Message\",\"field\":\"message\",\"width\":300},{\"id\":\"agent_id\",\"name\":\"Agent ID\",\"field\":\"agent_id\",\"width\":150},{\"id\":\"severity\",\"name\":\"Severity\",\"field\":\"severity\",\"width\":100}]}}",
+        "uiStateJSON": "{}",
+        "description": "Shows system events in a table format",
+        "version": 1,
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"acp-logs-*\",\"query\":{\"bool\":{\"must\":[{\"term\":{\"service\":\"acp\"}},{\"term\":{\"type\":\"event\"}}]}},\"filter\":[]}"
+        }
+      }
+    }
+  ]
+}

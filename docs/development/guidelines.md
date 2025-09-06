@@ -399,12 +399,12 @@ def exponential_backoff(attempt, base_delay=1, max_delay=60):
 # Configure structured logging
 import logging
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 class JSONFormatter(logging.Formatter):
     def format(self, record):
         log_entry = {
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'level': record.levelname,
             'logger': record.name,
             'message': record.getMessage(),
@@ -584,7 +584,7 @@ def create_error_response(
             message=message,
             error_code=error_code,
             details=details,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.now(timezone.utc)
         ).dict()
     )
 ```
@@ -1257,7 +1257,7 @@ def process_message(
 
 ```python
 from typing import List, Optional, Dict, Any, Union
-from datetime import datetime
+from datetime import datetime, timezone
 
 def get_agents(
     agent_type: Optional[str] = None,

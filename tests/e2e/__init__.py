@@ -1,1 +1,1 @@
-# E2E tests package
+"""End-to-end tests package for DevCycle."""

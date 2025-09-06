@@ -1,23 +1,13 @@
 """
 Database package for DevCycle.
 
-This package provides unified async database connection, models, and utilities.
+This package provides Tortoise ORM configuration and utilities.
 """
 
-from .connection import (
-    close_database,
-    get_async_database_url,
-    get_async_engine,
-    get_async_session,
-    init_database,
-)
-from .models import Base
+from .tortoise_config import TORTOISE_ORM, close_tortoise, init_tortoise
 
 __all__ = [
-    "get_async_database_url",
-    "get_async_engine",
-    "get_async_session",
-    "init_database",
-    "close_database",
-    "Base",
+    "TORTOISE_ORM",
+    "init_tortoise",
+    "close_tortoise",
 ]

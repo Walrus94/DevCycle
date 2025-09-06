@@ -29,18 +29,18 @@ class TestFastAPIUsersAuthenticationE2E:
         # Get the app's routes directly from the imported app
         routes = []
         for route in app.routes:
-            if hasattr(route, "path"):
+            if hasattr(route, "path") and hasattr(route, "methods"):
                 routes.append(f"{route.methods} {route.path}")
 
         print("Available routes:")
-        for route in sorted(routes):
-            print(f"  {route}")
+        for route_str in sorted(routes):
+            print(f"  {route_str}")
 
         # Check if auth routes exist
         auth_routes = [r for r in routes if "/auth" in r]
         print(f"\nAuth routes: {len(auth_routes)}")
-        for route in sorted(auth_routes):
-            print(f"  {route}")
+        for route_str in sorted(auth_routes):
+            print(f"  {route_str}")
 
         assert len(auth_routes) > 0, "No auth routes found"
 

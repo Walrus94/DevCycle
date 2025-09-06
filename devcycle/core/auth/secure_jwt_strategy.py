@@ -25,7 +25,9 @@ class SecureJWTStrategy(JWTStrategy):
         self.blacklist = TokenBlacklist()
         logger.info("Secure JWT strategy initialized with token blacklisting")
 
-    async def read_token(self, token: str, user_manager: Any) -> Optional[Any]:
+    async def read_token(
+        self, token: Optional[str], user_manager: Any
+    ) -> Optional[Any]:
         """
         Read and validate JWT token with blacklist checking.
 
@@ -40,7 +42,7 @@ class SecureJWTStrategy(JWTStrategy):
             InvalidToken: If token is blacklisted or invalid
         """
         # Check if token is blacklisted first
-        if self.blacklist.is_blacklisted(token):
+        if token and self.blacklist.is_blacklisted(token):
             logger.warning(
                 "Blacklisted token attempted to be used",
                 token_hash=self.blacklist._hash_token(token)[:8] + "...",
@@ -59,7 +61,9 @@ class SecureJWTStrategy(JWTStrategy):
             logger.warning(
                 "Token validation failed",
                 error=str(e),
-                token_hash=self.blacklist._hash_token(token)[:8] + "...",
+                token_hash=(
+                    self.blacklist._hash_token(token)[:8] + "..." if token else "None"
+                ),
             )
             raise
 

@@ -8,7 +8,7 @@ for protecting API endpoints.
 from functools import wraps
 from typing import Any, Callable
 
-from .models import User
+from .tortoise_models import User
 
 
 def require_role(required_role: str = "admin") -> Callable[[Callable], Callable]:

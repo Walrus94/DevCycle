@@ -21,7 +21,7 @@ The Redis caching system consists of:
    - TTL support
    - Error handling and health checks
 
-2. **Enhanced Agent Availability Service** (`devcycle/core/services/agent_availability_service_redis.py`)
+2. **Enhanced Agent Availability Service** (`devcycle/core/services/agent_availability_service.py`)
    - Redis-backed agent availability caching
    - Improved performance for agent lookups
    - Distributed cache sharing
@@ -81,10 +81,10 @@ cache.clear_pattern("user:*")
 ### Agent Availability Caching
 
 ```python
-from devcycle.core.services.agent_availability_service_redis import RedisAgentAvailabilityService
+from devcycle.core.services.agent_availability_service import AgentAvailabilityService
 
 # Initialize service with Redis caching
-service = RedisAgentAvailabilityService(agent_repository)
+service = AgentAvailabilityService(agent_service)
 
 # Check agent availability (uses cache)
 available = await service.is_agent_available("agent1")
@@ -173,7 +173,7 @@ The Redis caching system includes comprehensive tests:
 poetry run pytest tests/unit/test_redis_cache.py -v
 
 # Run agent availability service tests
-poetry run pytest tests/unit/test_agent_availability_service_redis.py -v
+poetry run pytest tests/unit/test_agent_availability_service.py -v
 ```
 
 ## Demo
@@ -194,7 +194,7 @@ The demo shows:
 
 To migrate from the existing in-memory cache to Redis:
 
-1. **Replace Service**: Use `RedisAgentAvailabilityService` instead of `AgentAvailabilityService`
+1. **Use Enhanced Service**: The `AgentAvailabilityService` now includes Redis caching by default
 2. **Update Dependencies**: Ensure Redis is available in your environment
 3. **Configure Redis**: Set appropriate Redis configuration
 4. **Test**: Run tests to ensure functionality works correctly
