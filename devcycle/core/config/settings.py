@@ -190,6 +190,18 @@ class APIConfig(BaseSettings):
         default=True, description="Trust proxy headers from load balancer"
     )
 
+    # Kibana Configuration
+    kibana: Dict[str, Any] = Field(
+        default_factory=lambda: {
+            "enabled": False,
+            "base_url": "http://localhost:5601",
+            "index_pattern": "devcycle-security-*",
+            "security_dashboard_id": "security-monitoring-dashboard",
+            "environment": "development",
+        },
+        description="Kibana configuration for security monitoring",
+    )
+
     # CORS Configuration
     cors_origins: List[str] = Field(
         default_factory=list, description="Allowed CORS origins"
@@ -451,6 +463,12 @@ class DevCycleConfig(BaseSettings):
     agent: AgentConfig = Field(default_factory=AgentConfig)
     docker: DockerConfig = Field(default_factory=DockerConfig)
     test: TestConfig = Field(default_factory=TestConfig)
+
+    # Kibana configuration (inherited from API config)
+    @property
+    def kibana(self) -> Dict[str, Any]:
+        """Get Kibana configuration from API config."""
+        return self.api.kibana
 
     model_config = SettingsConfigDict(
         env_file=".env",

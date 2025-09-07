@@ -7,6 +7,9 @@ and production environments.
 
 import logging
 import sys
+import uuid
+from datetime import datetime, timezone
+from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
@@ -298,3 +301,213 @@ def log_performance(func_name: Optional[str] = None) -> Callable:
 
 # Initialize logging when module is imported
 setup_logging(json_output=True)
+
+
+# Security Logging Components
+
+
+class SecurityEventType(Enum):
+    """Types of security events to log."""
+
+    AUTH_SUCCESS = "auth_success"
+    AUTH_FAILURE = "auth_failure"
+    AUTH_BLOCKED = "auth_blocked"
+    RATE_LIMIT_EXCEEDED = "rate_limit_exceeded"
+    SUSPICIOUS_ACTIVITY = "suspicious_activity"
+    ACCESS_DENIED = "access_denied"
+    ADMIN_ACTION = "admin_action"
+    USER_CREATED = "user_created"
+    USER_DELETED = "user_deleted"
+    ROLE_CHANGED = "role_changed"
+    PASSWORD_CHANGED = "password_changed"  # nosec B105 - Not a hardcoded password
+    LOGOUT = "logout"
+    SESSION_EXPIRED = "session_expired"
+    API_KEY_USED = "api_key_used"
+    API_KEY_REVOKED = "api_key_revoked"
+    DATA_ACCESS = "data_access"
+    CONFIGURATION_CHANGE = "configuration_change"
+    SECURITY_ALERT = "security_alert"
+
+
+class SecuritySeverity(Enum):
+    """Security event severity levels."""
+
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
+class SecurityLogger:
+    """Specialized logger for security events with structured data."""
+
+    def __init__(self) -> None:
+        """Initialize security logger."""
+        self.logger = structlog.get_logger("security")
+        self._setup_logging()
+
+    def _setup_logging(self) -> None:
+        """Configure structured logging for security events."""
+        # Security logging uses the same configuration as main logging
+        pass
+
+    def _get_client_info(self, request: Optional[Any] = None) -> Dict[str, Any]:
+        """Extract client information from request."""
+        if not request:
+            return {}
+
+        client_info = {}
+
+        # Get client IP
+        if hasattr(request, "client") and request.client:
+            client_info["ip_address"] = request.client.host
+        elif hasattr(request, "headers"):
+            # Check for forwarded headers
+            forwarded_for = request.headers.get("x-forwarded-for")
+            if forwarded_for:
+                client_info["ip_address"] = forwarded_for.split(",")[0].strip()
+            else:
+                client_info["ip_address"] = "unknown"
+
+        # Get user agent
+        if hasattr(request, "headers"):
+            client_info["user_agent"] = request.headers.get("user-agent", "unknown")
+
+        return client_info
+
+    def _create_event_id(self) -> str:
+        """Generate unique event ID."""
+        return str(uuid.uuid4())
+
+    def log_security_event(
+        self,
+        event_type: SecurityEventType,
+        user_id: Optional[str] = None,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+        severity: SecuritySeverity = SecuritySeverity.MEDIUM,
+        request: Optional[Any] = None,
+        additional_context: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """
+        Log a security event with structured data.
+
+        Returns:
+            str: Event ID for tracking
+        """
+        event_id = self._create_event_id()
+
+        # Extract client info from request if provided
+        if request:
+            client_info = self._get_client_info(request)
+            ip_address = ip_address or client_info.get("ip_address")
+            user_agent = user_agent or client_info.get("user_agent")
+
+        log_data = {
+            "event_id": event_id,
+            "event_type": event_type.value,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "severity": severity.value,
+            "user_id": user_id,
+            "ip_address": ip_address,
+            "user_agent": user_agent,
+            "details": details or {},
+            "additional_context": additional_context or {},
+        }
+
+        # Log based on severity
+        if severity == SecuritySeverity.CRITICAL:
+            self.logger.critical("Security event", **log_data)
+        elif severity == SecuritySeverity.HIGH:
+            self.logger.error("Security event", **log_data)
+        elif severity == SecuritySeverity.MEDIUM:
+            self.logger.warning("Security event", **log_data)
+        else:
+            self.logger.info("Security event", **log_data)
+
+        return event_id
+
+    def log_auth_success(
+        self,
+        user_id: str,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+        request: Optional[Any] = None,
+        additional_details: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Log successful authentication."""
+        return self.log_security_event(
+            SecurityEventType.AUTH_SUCCESS,
+            user_id=user_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            request=request,
+            details=additional_details or {},
+            severity=SecuritySeverity.LOW,
+        )
+
+    def log_auth_failure(
+        self,
+        email: str,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+        reason: str = "Invalid credentials",
+        request: Optional[Any] = None,
+        additional_details: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Log failed authentication attempt."""
+        details = {"email": email, "reason": reason, **(additional_details or {})}
+
+        return self.log_security_event(
+            SecurityEventType.AUTH_FAILURE,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            request=request,
+            details=details,
+            severity=SecuritySeverity.MEDIUM,
+        )
+
+    def log_rate_limit_exceeded(
+        self,
+        ip_address: Optional[str] = None,
+        endpoint: str = "unknown",
+        user_id: Optional[str] = None,
+        request: Optional[Any] = None,
+        additional_details: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Log rate limit violations."""
+        details = {"endpoint": endpoint, **(additional_details or {})}
+
+        return self.log_security_event(
+            SecurityEventType.RATE_LIMIT_EXCEEDED,
+            user_id=user_id,
+            ip_address=ip_address,
+            request=request,
+            details=details,
+            severity=SecuritySeverity.MEDIUM,
+        )
+
+    def log_suspicious_activity(
+        self,
+        user_id: Optional[str] = None,
+        ip_address: Optional[str] = None,
+        activity: str = "Unknown suspicious activity",
+        request: Optional[Any] = None,
+        additional_details: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Log suspicious user activity."""
+        details = {"activity": activity, **(additional_details or {})}
+
+        return self.log_security_event(
+            SecurityEventType.SUSPICIOUS_ACTIVITY,
+            user_id=user_id,
+            ip_address=ip_address,
+            request=request,
+            details=details,
+            severity=SecuritySeverity.HIGH,
+        )
+
+
+# Global security logger instance
+security_logger = SecurityLogger()

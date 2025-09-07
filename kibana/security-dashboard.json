@@ -1,0 +1,100 @@
+{
+  "version": "8.0.0",
+  "kibana": {
+    "version": "8.0.0",
+    "spaces": [
+      {
+        "id": "default",
+        "name": "Default",
+        "disabledFeatures": []
+      }
+    ],
+    "savedObjects": [
+      {
+        "id": "security-monitoring-dashboard",
+        "type": "dashboard",
+        "attributes": {
+          "title": "DevCycle Security Monitoring Dashboard",
+          "description": "Comprehensive security monitoring dashboard for DevCycle API",
+          "panelsJSON": "[{\"version\":\"8.0.0\",\"gridData\":{\"x\":0,\"y\":0,\"w\":24,\"h\":15,\"i\":\"1\"},\"panelIndex\":\"1\",\"embeddableConfig\":{\"title\":\"Security Events Timeline\"},\"panelType\":\"visualization\"},{\"version\":\"8.0.0\",\"gridData\":{\"x\":24,\"y\":0,\"w\":24,\"h\":15,\"i\":\"2\"},\"panelIndex\":\"2\",\"embeddableConfig\":{\"title\":\"Event Types Distribution\"},\"panelType\":\"visualization\"},{\"version\":\"8.0.0\",\"gridData\":{\"x\":0,\"y\":15,\"w\":24,\"h\":15,\"i\":\"3\"},\"panelIndex\":\"3\",\"embeddableConfig\":{\"title\":\"Top IP Addresses\"},\"panelType\":\"visualization\"},{\"version\":\"8.0.0\",\"gridData\":{\"x\":24,\"y\":15,\"w\":24,\"h\":15,\"i\":\"4\"},\"panelIndex\":\"4\",\"embeddableConfig\":{\"title\":\"Security Alerts\"},\"panelType\":\"visualization\"},{\"version\":\"8.0.0\",\"gridData\":{\"x\":0,\"y\":30,\"w\":48,\"h\":15,\"i\":\"5\"},\"panelIndex\":\"5\",\"embeddableConfig\":{\"title\":\"Security Events Table\"},\"panelType\":\"visualization\"}]",
+          "optionsJSON": "{\"useMargins\":true,\"syncColors\":false,\"hidePanelTitles\":false}",
+          "version": 1,
+          "timeRestore": false,
+          "kibanaSavedObjectMeta": {
+            "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+          }
+        }
+      },
+      {
+        "id": "security-events-timeline",
+        "type": "visualization",
+        "attributes": {
+          "title": "Security Events Timeline",
+          "visState": "{\"title\":\"Security Events Timeline\",\"type\":\"histogram\",\"params\":{\"grid\":{\"categoryLines\":false,\"style\":{\"color\":\"#eee\"}},\"categoryAxes\":[{\"id\":\"CategoryAxis-1\",\"type\":\"category\",\"position\":\"bottom\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\"},\"labels\":{\"show\":true,\"truncate\":100},\"title\":{}}],\"valueAxes\":[{\"id\":\"ValueAxis-1\",\"type\":\"value\",\"name\":\"LeftAxis-1\",\"position\":\"left\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\",\"mode\":\"normal\"},\"labels\":{\"show\":true,\"rotate\":0,\"filter\":false,\"truncate\":100},\"title\":{\"text\":\"Event Count\"}}],\"seriesParams\":[{\"data\":{\"id\":\"1\",\"label\":\"Security Events\",\"color\":\"#68BC00\"},\"type\":\"histogram\",\"mode\":\"stacked\",\"show\":true,\"valueAxis\":\"ValueAxis-1\",\"drawLinesBetweenPoints\":true,\"lineWidth\":2,\"showCircles\":true}],\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"times\":[],\"addTimeMarker\":false}",
+          "uiStateJSON": "{}",
+          "description": "Timeline showing security events over time",
+          "version": 1,
+          "kibanaSavedObjectMeta": {
+            "searchSourceJSON": "{\"index\":\"devcycle-security-*\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+          }
+        }
+      },
+      {
+        "id": "event-types-distribution",
+        "type": "visualization",
+        "attributes": {
+          "title": "Event Types Distribution",
+          "visState": "{\"title\":\"Event Types Distribution\",\"type\":\"pie\",\"params\":{\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"isDonut\":true,\"labels\":{\"show\":false,\"values\":true,\"last_level\":true,\"truncate\":100}},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"params\":{},\"schema\":\"metric\"},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"params\":{\"field\":\"event_type.keyword\",\"size\":10,\"order\":\"desc\",\"orderBy\":\"1\"},\"schema\":\"segment\"}]}",
+          "uiStateJSON": "{}",
+          "description": "Distribution of security event types",
+          "version": 1,
+          "kibanaSavedObjectMeta": {
+            "searchSourceJSON": "{\"index\":\"devcycle-security-*\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+          }
+        }
+      },
+      {
+        "id": "top-ip-addresses",
+        "type": "visualization",
+        "attributes": {
+          "title": "Top IP Addresses",
+          "visState": "{\"title\":\"Top IP Addresses\",\"type\":\"horizontal_bar\",\"params\":{\"grid\":{\"categoryLines\":false,\"style\":{\"color\":\"#eee\"}},\"categoryAxes\":[{\"id\":\"CategoryAxis-1\",\"type\":\"category\",\"position\":\"left\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\"},\"labels\":{\"show\":true,\"truncate\":100},\"title\":{}}],\"valueAxes\":[{\"id\":\"ValueAxis-1\",\"type\":\"value\",\"name\":\"LeftAxis-1\",\"position\":\"bottom\",\"show\":true,\"style\":{},\"scale\":{\"type\":\"linear\",\"mode\":\"normal\"},\"labels\":{\"show\":true,\"rotate\":0,\"filter\":false,\"truncate\":100},\"title\":{\"text\":\"Event Count\"}}],\"seriesParams\":[{\"data\":{\"id\":\"1\",\"label\":\"Events by IP\",\"color\":\"#68BC00\"},\"type\":\"histogram\",\"mode\":\"stacked\",\"show\":true,\"valueAxis\":\"ValueAxis-1\",\"drawLinesBetweenPoints\":true,\"lineWidth\":2,\"showCircles\":true}],\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"times\":[],\"addTimeMarker\":false}",
+          "uiStateJSON": "{}",
+          "description": "Top IP addresses by security event count",
+          "version": 1,
+          "kibanaSavedObjectMeta": {
+            "searchSourceJSON": "{\"index\":\"devcycle-security-*\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+          }
+        }
+      },
+      {
+        "id": "security-alerts",
+        "type": "visualization",
+        "attributes": {
+          "title": "Security Alerts",
+          "visState": "{\"title\":\"Security Alerts\",\"type\":\"table\",\"params\":{\"perPage\":10,\"showPartialRows\":false,\"showMeticsAtAllLevels\":false,\"sort\":{\"columnIndex\":null,\"direction\":null},\"showTotal\":false,\"showToolbar\":true,\"totalFunc\":\"sum\"},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"params\":{},\"schema\":\"metric\"},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"params\":{\"field\":\"alert_type.keyword\",\"size\":10,\"order\":\"desc\",\"orderBy\":\"1\"},\"schema\":\"bucket\"},{\"id\":\"3\",\"enabled\":true,\"type\":\"terms\",\"params\":{\"field\":\"severity.keyword\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\"},\"schema\":\"bucket\"}]}",
+          "uiStateJSON": "{}",
+          "description": "Security alerts table",
+          "version": 1,
+          "kibanaSavedObjectMeta": {
+            "searchSourceJSON": "{\"index\":\"devcycle-security-*\",\"query\":{\"query\":\"alert_type:*\",\"language\":\"kuery\"},\"filter\":[]}"
+          }
+        }
+      },
+      {
+        "id": "security-events-table",
+        "type": "visualization",
+        "attributes": {
+          "title": "Security Events Table",
+          "visState": "{\"title\":\"Security Events Table\",\"type\":\"table\",\"params\":{\"perPage\":10,\"showPartialRows\":false,\"showMeticsAtAllLevels\":false,\"sort\":{\"columnIndex\":null,\"direction\":null},\"showTotal\":false,\"showToolbar\":true,\"totalFunc\":\"sum\"},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"params\":{},\"schema\":\"metric\"},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"params\":{\"field\":\"event_type.keyword\",\"size\":10,\"order\":\"desc\",\"orderBy\":\"1\"},\"schema\":\"bucket\"},{\"id\":\"3\",\"enabled\":true,\"type\":\"terms\",\"params\":{\"field\":\"ip_address.keyword\",\"size\":10,\"order\":\"desc\",\"orderBy\":\"1\"},\"schema\":\"bucket\"},{\"id\":\"4\",\"enabled\":true,\"type\":\"terms\",\"params\":{\"field\":\"user_id.keyword\",\"size\":10,\"order\":\"desc\",\"orderBy\":\"1\"},\"schema\":\"bucket\"}]}",
+          "uiStateJSON": "{}",
+          "description": "Detailed security events table",
+          "version": 1,
+          "kibanaSavedObjectMeta": {
+            "searchSourceJSON": "{\"index\":\"devcycle-security-*\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+          }
+        }
+      }
+    ]
+  }
+}

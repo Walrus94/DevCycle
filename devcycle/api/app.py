@@ -24,6 +24,10 @@ from starlette.types import ASGIApp
 from ..core.config import get_config
 from ..core.logging import get_logger
 from .middleware.csrf_protection import CSRFProtectionMiddleware
+from .middleware.security_logging import (
+    KibanaIntegrationMiddleware,
+    SecurityLoggingMiddleware,
+)
 from .versioning import get_version_info
 
 
@@ -262,6 +266,14 @@ def _setup_middleware(app: FastAPI, config: Any) -> None:
     if config.api.gcp_load_balancer_enabled:
         app.add_middleware(GCPLoadBalancerMiddleware, enabled=True)
 
+    # Kibana integration middleware (for log correlation)
+    app.add_middleware(KibanaIntegrationMiddleware, kibana_config=config.kibana)
+
+    # Security logging middleware (for security event tracking)
+    app.add_middleware(
+        SecurityLoggingMiddleware, enable_kibana=config.kibana.get("enabled", False)
+    )
+
     # Security headers middleware (add first to ensure headers are set)
     app.add_middleware(SecurityHeadersMiddleware)
 
@@ -376,7 +388,7 @@ def _setup_routes(app: FastAPI) -> None:
 
     from ..core.auth.fastapi_users import auth_backend, fastapi_users
     from .auth import auth_router
-    from .routes import acp, websocket
+    from .routes import acp, audit, websocket
 
     # Create versioned routers (for future use)
     # health_router = create_versioned_router(APIVersion.V1, tags=["health"])
@@ -422,6 +434,7 @@ def _setup_routes(app: FastAPI) -> None:
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(acp.acp_router, prefix="/api/v1", tags=["acp"])
     app.include_router(websocket.websocket_router, tags=["websocket"])
+    app.include_router(audit.router, prefix="/api/v1", tags=["audit"])
 
     # Include FastAPI Users routers
     app.include_router(
