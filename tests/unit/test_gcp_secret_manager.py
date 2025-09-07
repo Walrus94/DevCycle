@@ -51,9 +51,13 @@ class TestGCPSecretManagerClient:
             assert client.project_id == "env-project"
             assert client.gcp_enabled is True
 
-    def test_init_gcp_not_available(self):
-        """Test client initialization when GCP libraries are not available."""
-        with patch("devcycle.core.secrets.gcp_secret_manager.GCP_AVAILABLE", False):
+    def test_init_gcp_client_failure(self):
+        """Test client initialization when GCP client creation fails."""
+        with patch("devcycle.core.secrets.gcp_secret_manager.secretmanager") as mock_sm:
+            mock_sm.SecretManagerServiceClient.side_effect = Exception(
+                "GCP client error"
+            )
+
             client = GCPSecretManagerClient(project_id="test-project")
 
             assert client.gcp_enabled is False
