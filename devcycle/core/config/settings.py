@@ -181,6 +181,16 @@ class APIConfig(BaseSettings):
     port: int = Field(default=8000, description="API server port")
     workers: int = Field(default=1, description="Number of API workers")
     reload: bool = Field(default=True, description="Enable auto-reload in development")
+
+    # GCP Load Balancer Configuration
+    gcp_load_balancer_enabled: bool = Field(
+        default=False, description="Enable GCP Load Balancer mode (SSL handled by GCP)"
+    )
+    trust_proxy: bool = Field(
+        default=True, description="Trust proxy headers from load balancer"
+    )
+
+    # CORS Configuration
     cors_origins: List[str] = Field(
         default_factory=list, description="Allowed CORS origins"
     )
@@ -273,6 +283,27 @@ class APIConfig(BaseSettings):
             "Content-Type",
             "X-Total-Count",
         ]
+
+    def validate_gcp_config(self) -> None:
+        """Validate GCP Load Balancer configuration."""
+        if not self.gcp_load_balancer_enabled:
+            return
+
+        # In GCP Load Balancer mode, we should bind to 0.0.0.0
+        if self.host != "0.0.0.0":  # nosec B104 - Required for GCP Load Balancer
+            raise ValueError(
+                "GCP Load Balancer mode requires API_HOST=0.0.0.0 "
+                "to accept connections from load balancer"
+            )
+
+    def get_gcp_config(self) -> Dict[str, Any]:
+        """Get GCP-specific configuration."""
+        return {
+            "gcp_load_balancer_enabled": self.gcp_load_balancer_enabled,
+            "trust_proxy": self.trust_proxy,
+            "host": self.host,
+            "port": self.port,
+        }
 
 
 class RedisConfig(BaseSettings):

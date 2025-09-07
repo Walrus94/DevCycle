@@ -1,0 +1,45 @@
+# GCP Load Balancer Ingress Configuration
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: devcycle-api-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: devcycle-api-ip
+    networking.gke.io/managed-certificates: devcycle-ssl-cert
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.allow-http: "false"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  rules:
+  - host: yourdomain.com
+    http:
+      paths:
+      - path: /*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: devcycle-api-service
+            port:
+              number: 80
+  - host: api.yourdomain.com
+    http:
+      paths:
+      - path: /*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: devcycle-api-service
+            port:
+              number: 80
+  - host: www.yourdomain.com
+    http:
+      paths:
+      - path: /*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: devcycle-api-service
+            port:
+              number: 80

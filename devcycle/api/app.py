@@ -60,6 +60,38 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return cast(Response, response)
 
 
+class GCPLoadBalancerMiddleware(BaseHTTPMiddleware):
+    """Middleware to handle GCP Load Balancer proxy headers."""
+
+    def __init__(self, app: ASGIApp, enabled: bool = False) -> None:
+        """Initialize GCP Load Balancer middleware."""
+        super().__init__(app)
+        self.enabled = enabled
+
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Any]
+    ) -> Response:
+        """Dispatch request with GCP Load Balancer support."""
+        if not self.enabled:
+            return cast(Response, await call_next(request))
+
+        # Trust proxy headers from GCP Load Balancer
+        # GCP Load Balancer sets X-Forwarded-* headers
+        if request.headers.get("x-forwarded-proto") == "https":
+            # Update the request URL to use HTTPS
+            # Note: This is a read-only property, so we'll handle it in the response
+            pass
+
+        # Handle X-Forwarded-For for client IP
+        if "x-forwarded-for" in request.headers and request.client:
+            # Use the first IP in the chain (original client)
+            client_ip = request.headers["x-forwarded-for"].split(",")[0].strip()
+            # Note: client.host is read-only, so we'll store it in request state
+            request.state.original_client_ip = client_ip
+
+        return cast(Response, await call_next(request))
+
+
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Simple rate limiting middleware for auth endpoints."""
 
@@ -226,6 +258,10 @@ def create_app(environment: Optional[str] = None) -> FastAPI:
 
 def _setup_middleware(app: FastAPI, config: Any) -> None:
     """Set up application middleware."""
+    # GCP Load Balancer middleware (when enabled)
+    if config.api.gcp_load_balancer_enabled:
+        app.add_middleware(GCPLoadBalancerMiddleware, enabled=True)
+
     # Security headers middleware (add first to ensure headers are set)
     app.add_middleware(SecurityHeadersMiddleware)
 
@@ -414,6 +450,10 @@ if __name__ == "__main__":
     import uvicorn
 
     config = get_config()
+
+    # Validate GCP configuration
+    config.api.validate_gcp_config()
+
     uvicorn.run(
         "devcycle.api.app:app",
         host=config.api.host,

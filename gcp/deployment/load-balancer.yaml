@@ -1,0 +1,13 @@
+# GCP Load Balancer Configuration for DevCycle API
+# This file configures a global HTTPS load balancer with managed SSL certificates
+
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: devcycle-ssl-cert
+  namespace: default
+spec:
+  domains:
+    - yourdomain.com
+    - api.yourdomain.com
+    - www.yourdomain.com

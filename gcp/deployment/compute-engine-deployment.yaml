@@ -1,0 +1,97 @@
+# GCP Compute Engine Deployment Configuration
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devcycle-api-deployment
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: devcycle-api
+  template:
+    metadata:
+      labels:
+        app: devcycle-api
+    spec:
+      containers:
+      - name: devcycle-api
+        image: gcr.io/PROJECT_ID/devcycle-api:latest
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        - name: API_HOST
+          value: "0.0.0.0"
+        - name: API_PORT
+          value: "8000"
+        - name: API_GCP_LOAD_BALANCER_ENABLED
+          value: "true"
+        - name: API_TRUST_PROXY
+          value: "true"
+        - name: API_CORS_ORIGINS
+          value: '["https://yourdomain.com", "https://api.yourdomain.com"]'
+        - name: API_CORS_CREDENTIALS
+          value: "false"
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: devcycle-secrets
+              key: db-host
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: devcycle-secrets
+              key: db-password
+        - name: SECURITY_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: devcycle-secrets
+              key: secret-key
+        - name: REDIS_HOST
+          valueFrom:
+            secretKeyRef:
+              name: devcycle-secrets
+              key: redis-host
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: devcycle-secrets
+              key: redis-password
+        - name: HF_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: devcycle-secrets
+              key: hf-token
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /api/v1/health/live
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/v1/health/ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: app-config
+          mountPath: /app/config
+      volumes:
+      - name: app-config
+        configMap:
+          name: devcycle-api-config

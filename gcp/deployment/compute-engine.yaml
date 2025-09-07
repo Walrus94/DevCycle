@@ -1,0 +1,39 @@
+# GCP Compute Engine Configuration for DevCycle API
+# This file configures a VM-based deployment with load balancer
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: devcycle-api-config
+  namespace: default
+data:
+  app.py: |
+    #!/usr/bin/env python3
+    """DevCycle API startup script for GCP Compute Engine."""
+    import os
+    import sys
+    from pathlib import Path
+
+    # Add the project root to Python path
+    project_root = Path(__file__).parent.parent
+    sys.path.insert(0, str(project_root))
+
+    # Set environment variables
+    os.environ.setdefault("ENVIRONMENT", "production")
+    os.environ.setdefault("API_HOST", "0.0.0.0")
+    os.environ.setdefault("API_PORT", "8000")
+    os.environ.setdefault("API_GCP_LOAD_BALANCER_ENABLED", "true")
+    os.environ.setdefault("API_TRUST_PROXY", "true")
+
+    # Import and run the application
+    from devcycle.api.app import app
+    import uvicorn
+
+    if __name__ == "__main__":
+        uvicorn.run(
+            "devcycle.api.app:app",
+            host="0.0.0.0",
+            port=8000,
+            workers=4,
+            log_level="info"
+        )
