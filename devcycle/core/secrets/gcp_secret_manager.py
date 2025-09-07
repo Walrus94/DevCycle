@@ -13,23 +13,13 @@ import logging
 import os
 from typing import Any, Dict, Optional, Union
 
-from ..cache.redis_cache import get_cache
-
-try:
-    from google.api_core import exceptions as gcp_exceptions
-    from google.cloud import secretmanager
-    from google.cloud.secretmanager import SecretManagerServiceClient
-
-    GCP_AVAILABLE = True
-except ImportError:
-    GCP_AVAILABLE = False
-    gcp_exceptions = None
-    secretmanager = None
-    SecretManagerServiceClient = None
+from google.api_core import exceptions as gcp_exceptions
+from google.cloud import secretmanager
+from google.cloud.secretmanager import SecretManagerServiceClient
 
 from devcycle.core.config import get_config
 
-from ..cache.redis_cache import RedisCache
+from ..cache.redis_cache import RedisCache, get_cache
 
 logger = logging.getLogger(__name__)
 
@@ -73,8 +63,8 @@ class GCPSecretManagerClient:
         else:
             self.cache = None
 
-        # Initialize GCP client if available
-        if GCP_AVAILABLE and self.project_id:
+        # Initialize GCP client
+        if self.project_id:
             try:
                 self.client = secretmanager.SecretManagerServiceClient()
                 self.gcp_enabled = True
@@ -88,16 +78,10 @@ class GCPSecretManagerClient:
         else:
             self.client = None
             self.gcp_enabled = False
-            if not GCP_AVAILABLE:
-                logger.warning(
-                    "GCP Secret Manager not available. "
-                    "Install google-cloud-secret-manager"
-                )
-            if not self.project_id:
-                logger.warning(
-                    "GCP project ID not found. "
-                    "Set GOOGLE_CLOUD_PROJECT environment variable"
-                )
+            logger.warning(
+                "GCP project ID not found. "
+                "Set GOOGLE_CLOUD_PROJECT environment variable"
+            )
 
     def _get_project_id(self) -> Optional[str]:
         """Get GCP project ID from environment or metadata service."""
@@ -107,20 +91,19 @@ class GCPSecretManagerClient:
             return project_id
 
         # Try GCP metadata service
-        if GCP_AVAILABLE:
-            try:
-                import requests
+        try:
+            import requests
 
-                response = requests.get(
-                    "http://metadata.google.internal/computeMetadata/v1/"
-                    "project/project-id",
-                    headers={"Metadata-Flavor": "Google"},
-                    timeout=2,
-                )
-                if response.status_code == 200:
-                    return str(response.text.strip())
-            except Exception as e:
-                logger.debug(f"Failed to get project ID from metadata service: {e}")
+            response = requests.get(
+                "http://metadata.google.internal/computeMetadata/v1/"
+                "project/project-id",
+                headers={"Metadata-Flavor": "Google"},
+                timeout=2,
+            )
+            if response.status_code == 200:
+                return str(response.text.strip())
+        except Exception as e:
+            logger.debug(f"Failed to get project ID from metadata service: {e}")
 
         return None
 
