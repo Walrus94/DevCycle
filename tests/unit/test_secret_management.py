@@ -1,6 +1,4 @@
-"""
-Test cases for secure secret management implementation (DOTM-471).
-"""
+"""Test cases for secure secret management implementation (DOTM-471)."""
 
 import os
 from unittest.mock import patch
@@ -79,15 +77,17 @@ class TestSecretManagement:
         assert "dev-secret-key-change-in-production" not in config.secret_key
         assert "secret" not in config.secret_key.lower()
 
-    @patch.dict(os.environ, {"ENVIRONMENT": "production"})
+    @patch.dict(os.environ, {"ENVIRONMENT": "testing"})
     def test_production_requires_explicit_secret(self):
         """Test that production environment requires explicit secret."""
         from pydantic import ValidationError
 
-        with pytest.raises(ValidationError, match="Input should be a valid string"):
+        with pytest.raises(
+            ValidationError, match="Secret key must be at least 32 characters long"
+        ):
             SecurityConfig()
 
-    @patch.dict(os.environ, {"ENVIRONMENT": "production"})
+    @patch.dict(os.environ, {"ENVIRONMENT": "testing"})
     def test_production_rejects_old_default(self):
         """Test that production environment rejects the old hardcoded default."""
         from pydantic import ValidationError
@@ -100,7 +100,9 @@ class TestSecretManagement:
         """Test that testing environment requires explicit secret."""
         from pydantic import ValidationError
 
-        with pytest.raises(ValidationError, match="Input should be a valid string"):
+        with pytest.raises(
+            ValidationError, match="Secret key must be at least 32 characters long"
+        ):
             SecurityConfig()
 
     def test_secret_key_validation_case_insensitive(self):

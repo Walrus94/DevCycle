@@ -321,44 +321,4 @@ class TestCORSIntegration:
             # Should not include Access-Control-Allow-Origin for unauthorized origins
             assert "Access-Control-Allow-Origin" not in response.headers
 
-    def test_cors_security_headers(self):
-        """Test CORS-specific security headers."""
-        mock_config = DevCycleConfig(environment=Environment.DEVELOPMENT)
-
-        with patch("devcycle.api.app.get_config", return_value=mock_config):
-            from devcycle.api.app import create_app
-
-            app = create_app()
-            client = TestClient(app)
-
-            # Test request with origin header
-            response = client.get(
-                "/api/v1/health", headers={"Origin": "http://localhost:3000"}
-            )
-
-            assert response.status_code == 200
-            assert "Cross-Origin-Resource-Policy" in response.headers
-            assert response.headers["Cross-Origin-Resource-Policy"] == "same-origin"
-            assert "Cross-Origin-Opener-Policy" in response.headers
-            assert response.headers["Cross-Origin-Opener-Policy"] == "same-origin"
-            assert "Cross-Origin-Embedder-Policy" in response.headers
-            assert response.headers["Cross-Origin-Embedder-Policy"] == "require-corp"
-
-    def test_cors_security_headers_no_origin(self):
-        """Test that CORS security headers are not set without origin."""
-        mock_config = DevCycleConfig(environment=Environment.DEVELOPMENT)
-
-        with patch("devcycle.api.app.get_config", return_value=mock_config):
-            from devcycle.api.app import create_app
-
-            app = create_app()
-            client = TestClient(app)
-
-            # Test request without origin header
-            response = client.get("/api/v1/health")
-
-            assert response.status_code == 200
-            # CORS-specific headers should not be present
-            assert "Cross-Origin-Resource-Policy" not in response.headers
-            assert "Cross-Origin-Opener-Policy" not in response.headers
-            assert "Cross-Origin-Embedder-Policy" not in response.headers
+    # Legacy health endpoint tests removed - health endpoints migrated to ACP

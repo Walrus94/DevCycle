@@ -33,6 +33,7 @@ class VersionedAPIRouter(APIRouter):
         tags: Optional[List[Union[str, Enum]]] = None,
         **kwargs: Any,
     ) -> None:
+        """Initialize versioned router."""
         # Add version prefix
         versioned_prefix = f"/api/{version.value}"
         if prefix:

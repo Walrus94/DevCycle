@@ -99,14 +99,17 @@ class TestHuggingFaceClient:
     def test_get_spaces_success(self, mock_hf_api: Mock) -> None:
         """Test successful spaces retrieval."""
         mock_api = Mock()
-        mock_api.list_spaces.return_value = [{"id": "test-org/test-space"}]
+        # Create mock objects with id attribute instead of dictionaries
+        mock_space = Mock()
+        mock_space.id = "test-org/test-space"
+        mock_api.list_spaces.return_value = [mock_space]
         mock_hf_api.return_value = mock_api
 
         with patch.dict("os.environ", {"HF_TOKEN": "test-token"}):
             client = HuggingFaceClient()
             spaces = client.get_spaces("test-org")
             assert len(spaces) == 1
-            assert spaces[0]["id"] == "test-org/test-space"
+            assert spaces[0].id == "test-org/test-space"
 
     @patch("devcycle.huggingface.client.HfApi")
     def test_get_spaces_failure(self, mock_hf_api: Mock) -> None:

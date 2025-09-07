@@ -236,7 +236,7 @@ def log_workflow_step(
 
 def log_performance(func_name: Optional[str] = None) -> Callable:
     """
-    Decorator to log function performance with structured data.
+    Log function performance with structured data.
 
     Args:
         func_name: Optional custom name for the function

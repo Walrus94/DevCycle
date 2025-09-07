@@ -8,7 +8,7 @@ enabling features like logout from all sessions and session monitoring.
 from datetime import datetime, timezone
 from typing import List, Optional
 
-import redis  # type: ignore
+import redis
 
 from ..config import get_config
 from ..logging import get_logger

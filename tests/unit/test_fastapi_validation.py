@@ -12,11 +12,12 @@ class SecureUserCreate(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=100)
     email: str = Field(..., pattern=r"^[^@]+@[^@]+\.[^@]+$")
-    description: str = Field(None, max_length=500)
+    description: str | None = Field(default=None, max_length=500)
 
     @field_validator("name", "description")
     @classmethod
     def validate_no_xss(cls, v):
+        """Validate that input contains no XSS attacks."""
         if v:
             return XSSValidator.validate_no_xss(v)
         return v
@@ -24,6 +25,7 @@ class SecureUserCreate(BaseModel):
     @field_validator("name", "description")
     @classmethod
     def validate_no_sql_injection(cls, v):
+        """Validate that input contains no SQL injection attempts."""
         if v:
             return XSSValidator.validate_no_sql_injection(v)
         return v

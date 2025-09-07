@@ -8,7 +8,7 @@ the application for improved performance and distributed caching capabilities.
 import json
 from typing import Any, Dict, Optional
 
-import redis  # type: ignore
+import redis
 
 from ..config import get_config
 from ..logging import get_logger
@@ -35,7 +35,6 @@ class RedisCache:
             decode_responses=True,
             socket_timeout=config.redis.socket_timeout,
             socket_connect_timeout=config.redis.socket_connect_timeout,
-            retry_on_timeout=config.redis.retry_on_timeout,
             max_connections=config.redis.max_connections,
         )
         self.key_prefix = key_prefix
@@ -93,12 +92,13 @@ class RedisCache:
             else:
                 serialized_value = json.dumps(value)
 
+            redis_result: bool | None
             if ttl is not None:
-                result = self.redis_client.setex(full_key, ttl, serialized_value)
+                redis_result = self.redis_client.setex(full_key, ttl, serialized_value)
             else:
-                result = self.redis_client.set(full_key, serialized_value)
+                redis_result = self.redis_client.set(full_key, serialized_value)
 
-            return bool(result)
+            return redis_result is not None and bool(redis_result)
 
         except Exception as e:
             logger.error(f"Error setting cache value for key {key}: {e}")
@@ -250,6 +250,17 @@ def get_cache(key_prefix: str = "devcycle:cache:") -> RedisCache:
         RedisCache instance
     """
     global _cache_instance
-    if _cache_instance is None:
+    import os
+
+    # In test environments, always create a new instance to use the current config
+    # This ensures tests can use the correct Redis settings
+    if os.getenv("ENVIRONMENT") == "testing":
         _cache_instance = RedisCache(key_prefix)
+    else:
+        # In non-test environments, use singleton behavior
+        # Only create new instance if none exists,
+        # ignore key_prefix for singleton behavior
+        if _cache_instance is None:
+            _cache_instance = RedisCache(key_prefix)
+
     return _cache_instance

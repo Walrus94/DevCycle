@@ -75,6 +75,7 @@ class RetryHandler:
     """General-purpose retry logic handler."""
 
     def __init__(self, max_retries: int = 3, base_delay: float = 1.0):
+        """Initialize retry handler."""
         self.max_retries = max_retries
         self.base_delay = base_delay
 

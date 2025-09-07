@@ -228,7 +228,7 @@ $RECYCLE.BIN/
 
 # Hugging Face
 .cache/
-huggingface/
+.cache/huggingface/
 
 # Logs
 logs/
@@ -252,3 +252,6 @@ temp/
 *.db
 *.sqlite
 *.sqlite3
+
+# Security scan reports
+bandit-report.json

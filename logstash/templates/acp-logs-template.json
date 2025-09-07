@@ -1,0 +1,60 @@
+{
+  "index_patterns": ["acp-logs-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index.refresh_interval": "5s"
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "type": {
+          "type": "keyword"
+        },
+        "service": {
+          "type": "keyword"
+        },
+        "environment": {
+          "type": "keyword"
+        },
+        "metric_name": {
+          "type": "keyword"
+        },
+        "metric_value": {
+          "type": "float"
+        },
+        "metric_unit": {
+          "type": "keyword"
+        },
+        "agent_id": {
+          "type": "keyword"
+        },
+        "workflow_id": {
+          "type": "keyword"
+        },
+        "event_type": {
+          "type": "keyword"
+        },
+        "event_category": {
+          "type": "keyword"
+        },
+        "message": {
+          "type": "text",
+          "analyzer": "standard"
+        },
+        "severity": {
+          "type": "keyword"
+        },
+        "tags": {
+          "type": "object"
+        },
+        "metadata": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

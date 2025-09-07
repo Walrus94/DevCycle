@@ -8,7 +8,7 @@ immediately upon logout, preventing token reuse and improving security.
 import hashlib
 from datetime import datetime, timezone
 
-import redis  # type: ignore
+import redis
 
 from ..config import get_config
 from ..logging import get_logger
