@@ -108,7 +108,6 @@ class TestConnectionManager:
 
         with patch(
             "devcycle.api.routes.websocket.get_redis_events",
-            new_callable=AsyncMock,
             return_value=mock_redis_events,
         ):
             await manager.subscribe_to_events(client_id, event_types)
@@ -148,7 +147,7 @@ class TestWebSocketEndpoints:
     async def test_websocket_events_connection(self, client):
         """Test WebSocket events endpoint connection."""
         with patch(
-            "devcycle.api.routes.websocket.get_redis_events", new_callable=AsyncMock
+            "devcycle.api.routes.websocket.get_redis_events"
         ) as mock_get_redis_events:
             # Mock Redis events to prevent hanging
             mock_redis_events = Mock()
@@ -175,7 +174,7 @@ class TestWebSocketEndpoints:
         # This test is simplified to avoid complex WebSocket mocking issues
         # The core subscription logic is tested in the ConnectionManager tests
         with patch(
-            "devcycle.api.routes.websocket.get_redis_events", new_callable=AsyncMock
+            "devcycle.api.routes.websocket.get_redis_events"
         ) as mock_get_redis_events:
             # Mock Redis events with proper async behavior
             mock_redis_events = Mock()
@@ -211,7 +210,7 @@ class TestWebSocketEndpoints:
         workflow_id = "test-workflow-123"
 
         with patch(
-            "devcycle.api.routes.websocket.get_redis_events", new_callable=AsyncMock
+            "devcycle.api.routes.websocket.get_redis_events"
         ) as mock_get_redis_events:
             # Mock Redis events
             mock_redis_events = Mock()
@@ -236,7 +235,7 @@ class TestWebSocketEndpoints:
     async def test_websocket_invalid_json(self, client):
         """Test WebSocket with invalid JSON."""
         with patch(
-            "devcycle.api.routes.websocket.get_redis_events", new_callable=AsyncMock
+            "devcycle.api.routes.websocket.get_redis_events"
         ) as mock_get_redis_events:
             # Mock Redis events to prevent hanging
             mock_redis_events = Mock()
@@ -264,7 +263,7 @@ class TestWebSocketEndpoints:
     async def test_websocket_unknown_message_type(self, client):
         """Test WebSocket with unknown message type."""
         with patch(
-            "devcycle.api.routes.websocket.get_redis_events", new_callable=AsyncMock
+            "devcycle.api.routes.websocket.get_redis_events"
         ) as mock_get_redis_events:
             # Mock Redis events to prevent hanging
             mock_redis_events = Mock()
@@ -308,7 +307,7 @@ class TestWebSocketIntegration:
     async def test_multiple_clients_connection(self, client):
         """Test multiple clients connecting simultaneously."""
         with patch(
-            "devcycle.api.routes.websocket.get_redis_events", new_callable=AsyncMock
+            "devcycle.api.routes.websocket.get_redis_events"
         ) as mock_get_redis_events:
             # Mock Redis events to prevent hanging
             mock_redis_events = Mock()

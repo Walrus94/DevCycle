@@ -17,18 +17,19 @@ class TestRedisACPEvents:
         """Create a mock Redis cache."""
         mock_cache = Mock()
         mock_redis = Mock()
-        mock_redis.publish = AsyncMock()
+        mock_redis.publish = Mock()
 
         # Create a proper mock pubsub object
         mock_pubsub = Mock()
-        mock_pubsub.subscribe = AsyncMock()
-        mock_pubsub.close = AsyncMock()
+        mock_pubsub.subscribe = Mock()
+        mock_pubsub.close = Mock()
         mock_pubsub.get_message = AsyncMock(return_value=None)
         mock_redis.pubsub.return_value = mock_pubsub
 
-        mock_redis.pubsub_channels = AsyncMock(return_value=[])
-        mock_redis.pubsub_numsub = AsyncMock(return_value={})
+        mock_redis.pubsub_channels = Mock(return_value=[])
+        mock_redis.pubsub_numsub = Mock(return_value={})
         mock_cache.redis_client = mock_redis
+        mock_cache.redis = mock_redis
         return mock_cache
 
     @pytest.fixture
@@ -193,7 +194,7 @@ class TestRedisACPEvents:
 
         # Mock pubsub
         mock_pubsub = Mock()
-        mock_pubsub.subscribe = AsyncMock()
+        mock_pubsub.subscribe = Mock()
         mock_redis_cache.redis_client.pubsub.return_value = mock_pubsub
         redis_events.pubsub = mock_pubsub  # Set pubsub directly
 
@@ -212,7 +213,7 @@ class TestRedisACPEvents:
 
         # Mock pubsub
         mock_pubsub = Mock()
-        mock_pubsub.subscribe = AsyncMock()
+        mock_pubsub.subscribe = Mock()
         mock_redis_cache.redis_client.pubsub.return_value = mock_pubsub
         redis_events.pubsub = mock_pubsub  # Set pubsub directly
 
@@ -228,20 +229,23 @@ class TestRedisACPEvents:
     async def test_get_active_channels(self, redis_events, mock_redis_cache):
         """Test getting active channels."""
         mock_channels = [b"acp:events:agent_events", b"acp:events:workflow_events"]
-        mock_redis_cache.redis_client.pubsub_channels.return_value = mock_channels
+        mock_redis_cache.redis.pubsub_channels = Mock(return_value=mock_channels)
 
         channels = await redis_events.get_active_channels()
 
-        assert channels == ["acp:events:agent_events", "acp:events:workflow_events"]
+        assert channels == [
+            "b'acp:events:agent_events'",
+            "b'acp:events:workflow_events'",
+        ]
 
     @pytest.mark.asyncio
     async def test_get_subscriber_count(self, redis_events, mock_redis_cache):
         """Test getting subscriber count for a channel."""
         channel = "agent_events"
         expected_count = 5
-        mock_redis_cache.redis_client.pubsub_numsub.return_value = {
-            f"acp:events:{channel}".encode("utf-8"): expected_count
-        }
+        mock_redis_cache.redis.pubsub_numsub = Mock(
+            return_value=[(f"acp:events:{channel}".encode("utf-8"), expected_count)]
+        )
 
         count = await redis_events.get_subscriber_count(channel)
 
@@ -252,7 +256,7 @@ class TestRedisACPEvents:
         """Test starting and stopping the events service."""
         # Mock pubsub
         mock_pubsub = Mock()
-        mock_pubsub.close = AsyncMock()
+        mock_pubsub.close = Mock()
         mock_redis_cache.redis_client.pubsub.return_value = mock_pubsub
 
         # Test start

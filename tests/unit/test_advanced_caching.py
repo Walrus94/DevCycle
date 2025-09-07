@@ -128,13 +128,15 @@ class TestCacheOptimizer:
         new_ttl = 7200.0
 
         # Mock cache get/set
-        mock_acp_cache.get.return_value = "test_value"
-        mock_acp_cache.set.return_value = True
+        mock_acp_cache.redis.get.return_value = "test_value"
+        mock_acp_cache.redis.set.return_value = True
 
         await cache_optimizer._adjust_key_ttl(key, new_ttl)
 
-        mock_acp_cache.get.assert_called_once_with(key)
-        mock_acp_cache.set.assert_called_once_with(key, "test_value", ttl=new_ttl)
+        mock_acp_cache.redis.get.assert_called_once_with(key)
+        mock_acp_cache.redis.set.assert_called_once_with(
+            key, "test_value", ttl=int(new_ttl)
+        )
 
     def test_enable_disable_optimization(self, cache_optimizer):
         """Test enabling/disabling optimization."""
@@ -161,7 +163,7 @@ class TestCacheWarmer:
         mock_cache = Mock()
         mock_cache.set = AsyncMock()
         mock_cache.redis = Mock()
-        mock_cache.redis.set = AsyncMock()
+        mock_cache.redis.set = Mock()
         return mock_cache
 
     @pytest.fixture
@@ -246,7 +248,7 @@ class TestCacheWarmer:
         await cache_warmer._warm_rule(rule)
 
         mock_acp_cache.redis.set.assert_called_once_with(
-            "test_key", '"warmed_data_for_test_key"', ex=3600
+            "test_key", '"warmed_data_for_test_key"', ttl=3600
         )
         assert rule.last_warmed is not None
         assert rule.warm_count == 1
@@ -358,7 +360,7 @@ class TestBatchOperations:
             BatchOperation(BatchOperationType.GET, "key2"),
         ]
 
-        mock_acp_cache.redis.mget.return_value = ["value1", "value2"]
+        mock_acp_cache.redis.redis_client.mget.return_value = ["value1", "value2"]
 
         await batch_processor._execute_get_operations(operations)
 
@@ -376,8 +378,8 @@ class TestBatchOperations:
         ]
 
         mock_pipeline = Mock()
-        mock_pipeline.execute = AsyncMock(return_value=[True, True])
-        mock_acp_cache.redis.pipeline.return_value = mock_pipeline
+        mock_pipeline.execute = Mock(return_value=[True, True])
+        mock_acp_cache.redis.redis_client.pipeline.return_value = mock_pipeline
 
         await batch_processor._execute_set_operations(operations)
 
@@ -395,10 +397,10 @@ class TestBatchOperations:
         ]
 
         # Mock Redis operations
-        mock_acp_cache.redis.mget.return_value = ["value1"]
+        mock_acp_cache.redis.redis_client.mget.return_value = ["value1"]
         mock_pipeline = Mock()
-        mock_pipeline.execute = AsyncMock(return_value=[True])
-        mock_acp_cache.redis.pipeline.return_value = mock_pipeline
+        mock_pipeline.execute = Mock(return_value=[True])
+        mock_acp_cache.redis.redis_client.pipeline.return_value = mock_pipeline
 
         result = await batch_processor.execute_batch(operations)
 
@@ -452,7 +454,11 @@ class TestConvenienceFunctions:
     async def test_batch_get(self, batch_processor, mock_acp_cache):
         """Test batch_get convenience function."""
         keys = ["key1", "key2", "key3"]
-        mock_acp_cache.redis.mget.return_value = ["value1", "value2", "value3"]
+        mock_acp_cache.redis.redis_client.mget.return_value = [
+            "value1",
+            "value2",
+            "value3",
+        ]
 
         result = await batch_get(batch_processor, keys)
 
@@ -465,8 +471,8 @@ class TestConvenienceFunctions:
         """Test batch_set convenience function."""
         key_value_pairs = [("key1", "value1"), ("key2", "value2")]
         mock_pipeline = Mock()
-        mock_pipeline.execute = AsyncMock(return_value=[True, True])
-        mock_acp_cache.redis.pipeline.return_value = mock_pipeline
+        mock_pipeline.execute = Mock(return_value=[True, True])
+        mock_acp_cache.redis.redis_client.pipeline.return_value = mock_pipeline
 
         result = await batch_set(batch_processor, key_value_pairs, ttl=3600)
 
@@ -477,7 +483,7 @@ class TestConvenienceFunctions:
     async def test_batch_delete(self, batch_processor, mock_acp_cache):
         """Test batch_delete convenience function."""
         keys = ["key1", "key2"]
-        mock_acp_cache.redis.delete = AsyncMock(return_value=2)
+        mock_acp_cache.redis.delete.return_value = 2
 
         result = await batch_delete(batch_processor, keys)
 
@@ -488,7 +494,7 @@ class TestConvenienceFunctions:
     async def test_batch_exists(self, batch_processor, mock_acp_cache):
         """Test batch_exists convenience function."""
         keys = ["key1", "key2"]
-        mock_acp_cache.redis.exists = AsyncMock(return_value=2)
+        mock_acp_cache.redis.exists.return_value = 2
 
         result = await batch_exists(batch_processor, keys)
 

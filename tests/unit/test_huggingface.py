@@ -109,7 +109,7 @@ class TestHuggingFaceClient:
             client = HuggingFaceClient()
             spaces = client.get_spaces("test-org")
             assert len(spaces) == 1
-            assert spaces[0]["id"] == "test-org/test-space"
+            assert spaces[0].id == "test-org/test-space"
 
     @patch("devcycle.huggingface.client.HfApi")
     def test_get_spaces_failure(self, mock_hf_api: Mock) -> None:

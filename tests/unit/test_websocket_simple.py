@@ -115,12 +115,9 @@ class TestConnectionManagerSimple:
         mock_redis_events.subscribe_to_workflow_events = AsyncMock()
 
         # Mock the get_redis_events function to return the mock
-        async def mock_get_redis_events():
-            return mock_redis_events
-
         with patch(
             "devcycle.api.routes.websocket.get_redis_events",
-            side_effect=mock_get_redis_events,
+            return_value=mock_redis_events,
         ):
             await manager.subscribe_to_events(client_id, event_types)
 

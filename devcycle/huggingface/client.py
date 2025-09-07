@@ -108,7 +108,7 @@ class HuggingFaceClient:
             self.logger.error(f"Failed to create organization {name}: {e}")
             return None
 
-    def get_spaces(self, owner: str) -> List[Dict[str, Any]]:
+    def get_spaces(self, owner: str) -> List[Any]:
         """
         Get list of spaces for a given owner/organization.
 
@@ -134,7 +134,7 @@ class HuggingFaceClient:
             else:
                 spaces = list(all_spaces)
             self.logger.info(f"Found {len(spaces)} spaces for {owner}")
-            return cast(List[Dict[str, Any]], spaces)
+            return spaces
         except Exception as e:
             self.logger.error(f"Failed to get spaces for {owner}: {e}")
             return []
